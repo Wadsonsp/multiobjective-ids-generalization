@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 """Experimentos v11
 
-#Trabalho de Conclusão de Curso
-#Especialização em Ciência de Dados
-Prof. Eduardo Kugler Viegas<BR>
-Alunos: Humberto Pradera e Leonardo Rocha
-
-Experimentos para subsidiar a construção do TCC<BR>
-
-Utilizamos a versão NetFlow v3 Datasets
-
 3 Objetivos:
 - F1 DS2
 - F1 DS3
