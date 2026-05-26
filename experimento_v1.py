@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 """Experimentos v11
 
-#Trabalho de Conclusão de Curso
-#Especialização em Ciência de Dados
-Prof. Eduardo Kugler Viegas<BR>
-Alunos: Humberto Pradera e Leonardo Rocha
-
-Experimentos para subsidiar a construção do TCC<BR>
-
-Utilizamos a versão NetFlow v3 Datasets
+Experimentos para subsidiar os expreimentos da dissertação<BR>
 
 3 Objetivos:
 - F1 DS2
@@ -57,7 +50,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import pickle  # >>> MEMO
 
 # =========================
-# >>> MEMOIZAÇÃO GLOBAL
+# >>> MEMORIZAÇÃO GLOBAL
 # =========================
 MEMO_CACHE = {}
 MEMO_FILE = os.path.expanduser('~/resultados/ds/memo_cache.pkl')
@@ -235,9 +228,9 @@ df = []
 
 #df_url.append('~/datasets/ds/NF-UNSW-NB15-v3.csv')
 df_url.append('#')
-df_url.append('~/datasets/ds/NF-ToN-IoT-v3.csv')
-df_url.append('~/datasets/ds/NF-BoT-IoT-v3.csv')
-df_url.append('~/datasets/ds/NF-CICIDS2018-v3.csv')
+df_url.append('~/datasets/ds/NF-UNSW-NB15-v2.csv')
+df_url.append('~/datasets/ds/NF-ToN-IoT-v2')
+#df_url.append('~/datasets/ds/NF-CICIDS2018-v3.csv')
 
 tamanho_antes = 0
 tamanho_depois = 0
@@ -762,14 +755,6 @@ res_dt = Minimize(problem)
 save_memo()
 
 print("Processamento concluído.")
-
-
-
-
-
-
-
-
 
 # load_memo()  # >>> 
 # MEMO
