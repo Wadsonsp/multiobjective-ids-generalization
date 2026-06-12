@@ -166,3 +166,61 @@ class TestFabricaClassificadores:
         assert criar_classificador("logistic_regression").class_weight == "balanced"
         assert usa_sample_weight("xgboost") is True
         assert usa_sample_weight("lda") is False
+
+
+class TestRegressaoClasseRara:
+    """Regressão do erro 'Invalid classes inferred' do XGBoost.
+
+    Cenário real: na amostra das bases NF-v2, classes raras (ex.: Worms,
+    164 fluxos) podem ter menos membros que o número de folds. Quando um
+    fold de treino fica sem a classe, a codificação global deixa um
+    "buraco" na sequência de rótulos e o XGBoost exige 0..n-1 contíguos.
+    A correção recodifica localmente no _treinar e decodifica no _prever.
+    """
+
+    def _bases_com_classe_rara(self):
+        import pandas as pd
+        rng = np.random.RandomState(5)
+        def base(seed, desloc):
+            r = np.random.RandomState(seed)
+            partes = []
+            for i, (classe, n) in enumerate(
+                [("Benign", 200), ("DoS", 200), ("Scanning", 200), ("Worms", 3)]
+            ):
+                f = r.normal(i * 2 + desloc, 0.5, size=(n, 5))
+                df = pd.DataFrame(f, columns=[f"F{j}" for j in range(5)])
+                df["Attack"] = classe
+                partes.append(df)
+            df = pd.concat(partes).sample(frac=1.0, random_state=seed)
+            return df.drop(columns=["Attack"]).reset_index(drop=True), \
+                   df["Attack"].reset_index(drop=True)
+        return {"A": base(1, 0.0), "B": base(2, 0.3)}
+
+    def test_xgboost_com_classe_rara_nao_quebra(self):
+        # Com 3 membros de 'Worms' e 5 folds, há folds de treino sem a
+        # classe - exatamente o cenário que estourava antes da correção
+        bases = self._bases_com_classe_rara()
+        X, _ = bases["A"]
+        mascara = np.ones(X.shape[1], dtype=int)
+        criterios = avaliar_fitness(mascara, bases, "xgboost", cv_folds=5, seed=42)
+        assert 0.0 <= list(criterios["f1_macro_intra"].values())[0] <= 1.0
+        assert len(criterios["f1_macro_cross_por_direcao"]) == 2
+
+    def test_predicoes_voltam_ao_espaco_global(self):
+        # As predições decodificadas precisam indexar as MESMAS classes
+        # da codificação global, senão o F1 compara códigos trocados
+        from Modulos.avaliacao import _prever, _treinar
+        from Modulos.classificadores import criar_classificador
+
+        bases = self._bases_com_classe_rara()
+        X, y = bases["A"]
+        # Treino propositalmente SEM a classe de índice global 0 (Benign)
+        filtro = y != "Benign"
+        classes_globais = np.unique(y)
+        y_cod = np.array([list(classes_globais).index(v) for v in y[filtro]])
+        modelo = criar_classificador("xgboost", seed=42)
+        _treinar(modelo, "xgboost", X[filtro].values, y_cod)
+        y_pred = _prever(modelo, X[filtro].values)
+        # Os códigos previstos devem estar no espaço global (1, 2, 3),
+        # nunca no espaço local contíguo do XGBoost (0, 1, 2)
+        assert set(np.unique(y_pred)).issubset(set(np.unique(y_cod)))

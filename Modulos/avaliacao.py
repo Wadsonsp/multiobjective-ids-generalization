@@ -56,13 +56,35 @@ def _treinar(modelo, nome_clf, X_treino, y_treino):
     O XGBoost multiclasse não tem class_weight, então o reequilíbrio da
     função de perda pela frequência inversa das classes (Seção 4.1) entra
     aqui via compute_sample_weight('balanced').
+
+    Detalhe importante: o XGBoost exige rótulos CONTÍGUOS 0..n-1 no
+    treino. Como uso codificação global (todas as classes da base) e
+    classes raras (ex.: Worms, 164 fluxos) podem não aparecer em algum
+    fold da CV, a sequência ficaria com "buracos" e o fit estouraria
+    (Invalid classes inferred). Por isso recodifico para o espaço
+    contíguo LOCAL do treino e guardo o mapa inverso, usado por _prever
+    para devolver as predições no espaço global.
     """
+    y_treino = np.asarray(y_treino)
     if usa_sample_weight(nome_clf):
-        pesos = compute_sample_weight(class_weight="balanced", y=y_treino)
-        modelo.fit(X_treino, y_treino, sample_weight=pesos)
+        classes_locais = np.unique(y_treino)
+        mapa = {c: i for i, c in enumerate(classes_locais)}
+        y_local = np.array([mapa[v] for v in y_treino])
+        pesos = compute_sample_weight(class_weight="balanced", y=y_local)
+        modelo.fit(X_treino, y_local, sample_weight=pesos)
+        modelo._classes_globais = classes_locais
     else:
         modelo.fit(X_treino, y_treino)
+        modelo._classes_globais = None
     return modelo
+
+
+def _prever(modelo, X):
+    """Predict devolvendo os rótulos no espaço de codificação global."""
+    y_pred = modelo.predict(X)
+    if getattr(modelo, "_classes_globais", None) is not None:
+        y_pred = modelo._classes_globais[np.asarray(y_pred, dtype=int)]
+    return y_pred
 
 
 def _codificar_rotulos(y, classes):
@@ -99,7 +121,7 @@ def avaliar_intra_dataset(mascara, X, y, nome_clf, cv_folds=5, seed=42):
         modelo = criar_classificador(nome_clf, seed=seed)
         y_tr_cod = _codificar_rotulos(y_tr, classes)
         _treinar(modelo, nome_clf, X_tr_n, y_tr_cod)
-        y_pred = modelo.predict(X_te_n)
+        y_pred = _prever(modelo, X_te_n)
         y_te_cod = _codificar_rotulos(y_te, classes)
 
         # Registro das métricas por fold (linha 4)
@@ -153,7 +175,7 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
 
             # Tempo médio de inferência POR AMOSTRA (linha 12)
             inicio = time.perf_counter()
-            y_pred = modelo.predict(X_te_n)
+            y_pred = _prever(modelo, X_te_n)
             duracao = time.perf_counter() - inicio
             tempos_inferencia.append(duracao / max(len(X_te_n), 1))
 
