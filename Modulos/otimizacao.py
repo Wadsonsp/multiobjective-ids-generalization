@@ -50,7 +50,7 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
     """Problema binário tri-objetivo avaliado pelo Algoritmo 2."""
 
     def __init__(self, bases_Xy, nome_clf, cv_folds=5, seed=42,
-                 objetivo_custo="k"):
+                 objetivo_custo="k", cache=None):
         # d = número de atributos candidatos (colunas já alinhadas)
         self.d = next(iter(bases_Xy.values()))[0].shape[1]
         self.bases_Xy = bases_Xy
@@ -58,6 +58,10 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
         self.cv_folds = cv_folds
         self.seed = seed
         self.objetivo_custo = objetivo_custo
+        # Cache persistente de avaliações (Modulos/checkpoint.py): com
+        # seed fixa o NSGA-II é determinístico, então reexecutar após uma
+        # queda do Colab vira "replay" instantâneo até o ponto da falha
+        self.cache = cache
         self.rng = np.random.RandomState(seed)
         # Histórico com TODOS os critérios de cada solução avaliada
         # (inclusive F1 cross por direção), para análise posterior
@@ -67,9 +71,18 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
     def _evaluate(self, x, out, *args, **kwargs):
         # Linha 6 do Algoritmo 1: critérios(x) <- AvaliarFitness(x, D, h)
         mascara = reparar_mascara_vazia(x, self.rng)
-        criterios = avaliar_fitness(
-            mascara, self.bases_Xy, self.nome_clf, self.cv_folds, self.seed
-        )
+        # Atenção: comparar com None, e não usar truthiness - o cache
+        # define __len__ e um cache VAZIO (início da execução) é falsy,
+        # o que silenciosamente desligaria a gravação
+        criterios = self.cache.obter(mascara) if self.cache is not None else None
+        if criterios is None:
+            criterios = avaliar_fitness(
+                mascara, self.bases_Xy, self.nome_clf, self.cv_folds, self.seed
+            )
+            if self.cache is not None:
+                # Gravação imediata no Drive: se a sessão cair agora,
+                # esta avaliação já está salva
+                self.cache.registrar(mascara, criterios)
 
         f1_intra_medio = float(np.mean(list(criterios["f1_macro_intra"].values())))
         f1_cross_medio = float(
@@ -89,7 +102,8 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
 
 def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
                         pc=0.9, pm=0.05, seed=42, cv_folds=5,
-                        objetivo_custo="k", verbose=True):
+                        objetivo_custo="k", verbose=True,
+                        cache=None, registro_progresso=None):
     """Executa o Algoritmo 1 e retorna o conjunto Pareto P*.
 
     Returns
@@ -101,7 +115,7 @@ def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
     """
     problema = ProblemaSelecaoCaracteristicas(
         bases_Xy, nome_clf, cv_folds=cv_folds, seed=seed,
-        objetivo_custo=objetivo_custo,
+        objetivo_custo=objetivo_custo, cache=cache,
     )
 
     # Linhas 2-3: população inicial binária; linhas 9-11: operadores genéticos
@@ -114,6 +128,13 @@ def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
     )
 
     # Linhas 4-12: laço de gerações (critério de parada = N_gen)
+    # Fronteira parcial gravada no Drive ao fim de CADA geração; o
+    # callback só entra nos kwargs quando existe, porque o pymoo invoca
+    # o que for passado (None explícito quebraria a chamada interna)
+    kwargs_minimize = {}
+    if registro_progresso is not None:
+        kwargs_minimize["callback"] = registro_progresso
+
     res = minimize(
         problema,
         algoritmo,
@@ -121,6 +142,7 @@ def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
         seed=seed,
         verbose=verbose,
         save_history=False,
+        **kwargs_minimize,
     )
 
     # Linhas 13-14: P* = conjunto de soluções não-dominadas

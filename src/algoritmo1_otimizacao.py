@@ -29,6 +29,7 @@ import yaml
 # Permito rodar tanto da raiz do projeto quanto de dentro de src/
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from Modulos.checkpoint import CacheAvaliacoes, RegistroProgresso  # noqa: E402
 from Modulos.drive_loader import carregar_todas_as_bases  # noqa: E402
 from Modulos.otimizacao import executar_otimizacao  # noqa: E402
 from Modulos.preprocessamento import alinhar_colunas, preprocessar_base  # noqa: E402
@@ -117,6 +118,12 @@ def main():
         "--amostra-busca", type=int, default=None,
         help="Subamostra estratificada da fase de busca (0 = dados completos)",
     )
+    parser.add_argument(
+        "--checkpoint-dir", default=None,
+        help="Pasta (idealmente no Drive) para cache de avaliações e "
+             "progresso por geração. Para RETOMAR após queda do Colab, "
+             "basta reexecutar o MESMO comando com a mesma pasta.",
+    )
     args = parser.parse_args()
 
     config = carregar_config(args.config)
@@ -141,6 +148,30 @@ def main():
 
     bases_Xy, ordem = preparar_bases(config, amostra_busca)
 
+    # Checkpoint: cache de avaliações + progresso por geração no Drive.
+    # O contexto identifica o experimento; mudar qualquer item daria
+    # critérios diferentes, então o cache é segregado por contexto.
+    cache, registro = None, None
+    if args.checkpoint_dir:
+        contexto = {
+            "classificador": nome_clf,
+            "bases": sorted(bases_Xy.keys()),
+            "d": len(ordem),
+            "cv_folds": config["avaliacao"]["cv_folds"],
+            "amostra_busca": amostra_busca,
+            "seed": cfg_otm["seed"],
+            "objetivo_custo": cfg_otm["objetivo_custo"],
+        }
+        sufixo = f"{nome_clf}_a{amostra_busca or 'full'}_s{cfg_otm['seed']}"
+        cache = CacheAvaliacoes(
+            os.path.join(args.checkpoint_dir, f"cache_{sufixo}.jsonl"), contexto
+        )
+        registro = RegistroProgresso(
+            os.path.join(args.checkpoint_dir, f"progresso_{sufixo}.json")
+        )
+        print(f"[checkpoint] {len(cache)} avaliações recuperadas do cache "
+              f"em {args.checkpoint_dir}")
+
     inicio = time.time()
     resultado = executar_otimizacao(
         bases_Xy,
@@ -152,6 +183,8 @@ def main():
         seed=cfg_otm["seed"],
         cv_folds=config["avaliacao"]["cv_folds"],
         objetivo_custo=cfg_otm["objetivo_custo"],
+        cache=cache,
+        registro_progresso=registro,
     )
     duracao = time.time() - inicio
 

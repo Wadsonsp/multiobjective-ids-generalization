@@ -58,6 +58,7 @@ Sistemas de Detecção de Intrusão Baseados em Aprendizado de Máquina com Gene
 │   ├── classificadores.py     # fábrica dos 8 classificadores (Seção 5.2)
 │   ├── avaliacao.py           # Algoritmo 2 - AvaliarFitness(x, D, h)
 │   ├── otimizacao.py          # Algoritmo 1 - NSGA-II (pymoo)
+│   ├── checkpoint.py          # cache de avaliações + progresso (retomada pós-queda)
 │   └── selecao_rfe.py         # baseline RFE (Capítulo 5, monobjetivo)
 ├── src/
 │   ├── config.yaml                # parâmetros centrais dos experimentos
@@ -65,7 +66,9 @@ Sistemas de Detecção de Intrusão Baseados em Aprendizado de Máquina com Gene
 │   ├── algoritmo1_otimizacao.py   # executável do Algoritmo 1
 │   └── algoritmo2_avaliacao.py    # executável do Algoritmo 2 (baseline ou solução do P*)
 ├── Resultados/          # pareto/, metricas/, logs/
-└── tests/               # suíte pytest (cobertura mínima 85%, atual ~94%)
+├── notebooks/
+│   └── experimentos_dissertacao.ipynb  # orquestrador das execuções no Colab
+└── tests/               # suíte pytest (cobertura mínima 85%, atual ~96%)
 ```
 
 ## Como executar
@@ -76,8 +79,9 @@ pip install -r requirements.txt
 # 1) Uma única vez, no Colab: baixar as bases para o Drive
 python src/setup_datasets_drive.py
 
-# 2) Otimização multiobjetivo (Algoritmo 1)
-python src/algoritmo1_otimizacao.py
+# 2) Otimização multiobjetivo (Algoritmo 1) com checkpoint no Drive:
+#    se o Colab cair, REEXECUTAR O MESMO COMANDO retoma do ponto da falha
+python src/algoritmo1_otimizacao.py --checkpoint-dir /content/drive/MyDrive/mestrado/Resultados/checkpoints
 
 # 3) Avaliação final de uma solução do P* com dados completos (Algoritmo 2)
 python src/algoritmo2_avaliacao.py --pareto Resultados/pareto/<arquivo>.json --solucao 0 --amostra 0
