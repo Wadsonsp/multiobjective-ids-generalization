@@ -91,7 +91,7 @@ class TestCrossDataset:
         # Linha 9: F1-macro POR DIREÇÃO, sem reduzir a média única
         X, _ = bases_Xy["BASE_A"]
         mascara = np.ones(X.shape[1], dtype=int)
-        resultados, _ = avaliar_cross_dataset(mascara, bases_Xy, CLF_RAPIDO, seed=42)
+        resultados, _, _ = avaliar_cross_dataset(mascara, bases_Xy, CLF_RAPIDO, seed=42)
         assert "BASE_A->BASE_B" in resultados
         assert "BASE_B->BASE_A" in resultados
         assert len(resultados) == 2  # i != j, nada de i == j
@@ -100,7 +100,7 @@ class TestCrossDataset:
         # Linha 12: tempo médio de inferência precisa ser medido
         X, _ = bases_Xy["BASE_A"]
         mascara = np.ones(X.shape[1], dtype=int)
-        _, tempo = avaliar_cross_dataset(mascara, bases_Xy, CLF_RAPIDO, seed=42)
+        _, tempo, _ = avaliar_cross_dataset(mascara, bases_Xy, CLF_RAPIDO, seed=42)
         assert tempo > 0.0
 
 
@@ -224,3 +224,58 @@ class TestRegressaoClasseRara:
         # Os códigos previstos devem estar no espaço global (1, 2, 3),
         # nunca no espaço local contíguo do XGBoost (0, 1, 2)
         assert set(np.unique(y_pred)).issubset(set(np.unique(y_cod)))
+
+
+class TestDiagnosticoCross:
+    """Decomposição da queda cross-dataset em domain shift vs taxonomia."""
+
+    def _bases_taxonomia_diferente(self):
+        import pandas as pd
+        def base(seed, classes, desloc):
+            r = np.random.RandomState(seed)
+            partes = []
+            for i, c in enumerate(classes):
+                f = r.normal(i * 2 + desloc, 0.5, size=(120, 5))
+                df = pd.DataFrame(f, columns=[f"F{j}" for j in range(5)])
+                df["Attack"] = c
+                partes.append(df)
+            df = pd.concat(partes).sample(frac=1.0, random_state=seed)
+            return (df.drop(columns=["Attack"]).reset_index(drop=True),
+                    df["Attack"].reset_index(drop=True))
+        # BASE_A tem Benign/DoS/Scan; BASE_B troca Scan por Ransomware
+        # (classe que A nunca viu) -> incompatibilidade de taxonomia
+        return {
+            "A": base(1, ["Benign", "DoS", "Scan"], 0.0),
+            "B": base(2, ["Benign", "DoS", "Ransomware"], 0.3),
+        }
+
+    def test_diagnostico_presente_na_saida(self, bases_Xy):
+        X, _ = bases_Xy["BASE_A"]
+        mascara = np.ones(X.shape[1], dtype=int)
+        c = avaliar_fitness(mascara, bases_Xy, "lda", cv_folds=2, seed=42)
+        assert "diagnostico_cross" in c
+        for chave in ("BASE_A->BASE_B", "BASE_B->BASE_A"):
+            d = c["diagnostico_cross"][chave]
+            assert "matriz_confusao" in d
+            assert "prop_desconhecidas" in d
+            assert "acuracia_classes_conhecidas" in d
+
+    def test_detecta_classe_desconhecida(self):
+        # Treinar em A (sem Ransomware) e testar em B (com Ransomware):
+        # a partição desconhecida deve ser detectada e quantificada
+        from Modulos.avaliacao import avaliar_cross_dataset
+        bases = self._bases_taxonomia_diferente()
+        X, _ = bases["A"]
+        mascara = np.ones(X.shape[1], dtype=int)
+        _, _, diag = avaliar_cross_dataset(mascara, bases, "lda", seed=42)
+        d = diag["A->B"]
+        # ~1/3 das amostras de B são Ransomware, ausente em A
+        assert d["n_classes_desconhecidas"] > 0
+        assert 0.2 < d["prop_desconhecidas"] < 0.45
+
+    def test_matriz_soma_total_de_amostras(self, bases_Xy):
+        X, _ = bases_Xy["BASE_A"]
+        mascara = np.ones(X.shape[1], dtype=int)
+        c = avaliar_fitness(mascara, bases_Xy, "lda", cv_folds=2, seed=42)
+        d = c["diagnostico_cross"]["BASE_A->BASE_B"]
+        assert int(np.sum(d["matriz_confusao"])) == d["n_total"]

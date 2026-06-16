@@ -154,6 +154,7 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
     """
     resultados = {}
     tempos_inferencia = []
+    diagnostico = {}
 
     nomes = list(bases_Xy.keys())
     for nome_i in nomes:
@@ -185,8 +186,59 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
             # Registro por direção de transferência (linha 9)
             resultados[f"{nome_i}->{nome_j}"] = float(f1)
 
+            # --- Diagnóstico da queda cross-dataset ---------------------
+            # Separo o teste em duas partições para distinguir as causas:
+            # (a) classes do teste que EXISTEM no treino (código >= 0): o
+            #     erro aqui é domain shift puro (mesma classe, distribuição
+            #     diferente, o modelo poderia ter acertado);
+            # (b) classes AUSENTES no treino (código -1): incompatibilidade
+            #     de taxonomia - o modelo nunca viu essa classe e não tem
+            #     como acertá-la. A queda dessas é estrutural, não de modelo.
+            conhecidas = y_te_cod >= 0
+            n_total = len(y_te_cod)
+            n_desconhecidas = int(np.sum(~conhecidas))
+            if conhecidas.any():
+                acc_conhecidas = float(
+                    np.mean(y_pred[conhecidas] == y_te_cod[conhecidas])
+                )
+                f1_conhecidas = float(f1_score(
+                    y_te_cod[conhecidas], y_pred[conhecidas],
+                    average="macro", zero_division=0,
+                ))
+            else:
+                acc_conhecidas = 0.0
+                f1_conhecidas = 0.0
+            # Matriz de confusão da transferência em rótulos GLOBAIS do
+            # teste (todas as classes da base de destino), para o gráfico.
+            # A última linha/coluna extra representa "classe sem
+            # correspondência" entre as taxonomias.
+            classes_teste = np.unique(y_j)
+            mapa_teste = {c: i for i, c in enumerate(classes_teste)}
+            y_te_global = np.array([mapa_teste[v] for v in y_j])
+            pred_texto = np.array(
+                [classes_treino[c] if 0 <= c < len(classes_treino) else "__?__"
+                 for c in y_pred]
+            )
+            y_pred_global = np.array([mapa_teste.get(v, -1) for v in pred_texto])
+            cm = confusion_matrix(
+                y_te_global,
+                np.where(y_pred_global < 0, len(classes_teste), y_pred_global),
+                labels=list(range(len(classes_teste) + 1)),
+            )
+            diagnostico[f"{nome_i}->{nome_j}"] = {
+                "f1_macro": float(f1),
+                "n_total": n_total,
+                "n_classes_desconhecidas": n_desconhecidas,
+                "prop_desconhecidas": n_desconhecidas / max(n_total, 1),
+                "acuracia_classes_conhecidas": acc_conhecidas,
+                "f1_macro_classes_conhecidas": f1_conhecidas,
+                "classes_treino": [str(c) for c in classes_treino],
+                "classes_teste": [str(c) for c in classes_teste],
+                "matriz_confusao": cm.tolist(),
+            }
+
     tempo_medio = float(np.mean(tempos_inferencia)) if tempos_inferencia else 0.0
-    return resultados, tempo_medio
+    return resultados, tempo_medio, diagnostico
 
 
 def avaliar_fitness(mascara, bases_Xy, nome_clf, cv_folds=5, seed=42):
@@ -205,14 +257,19 @@ def avaliar_fitness(mascara, bases_Xy, nome_clf, cv_folds=5, seed=42):
         for nome, (X, y) in bases_Xy.items()
     }
 
-    # Linhas 5-12: cross-dataset por direção + tempo de inferência
-    cross, tempo_medio = avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed)
+    # Linhas 5-12: cross-dataset por direção + tempo de inferência.
+    # O diagnostico traz matriz de confusão e a decomposição das causas
+    # da queda (domain shift vs. incompatibilidade de taxonomia).
+    cross, tempo_medio, diagnostico = avaliar_cross_dataset(
+        mascara, bases_Xy, nome_clf, seed
+    )
 
     # Linhas 13-18: saída com os critérios separados
     return {
         "f1_macro_intra": {nome: r["f1_macro"] for nome, r in intra.items()},
         "detalhes_intra": intra,
         "f1_macro_cross_por_direcao": cross,
+        "diagnostico_cross": diagnostico,
         "tempo_medio_inferencia": tempo_medio,
         "numero_atributos": numero_de_atributos(mascara),
     }
