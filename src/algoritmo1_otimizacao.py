@@ -48,7 +48,7 @@ def preparar_bases(config):
     bases_Xy = {}
     for nome, df in brutas.items():
         # Eu aplico somente limpeza e separação: nenhuma linha é amostrada.
-        X, y = preprocessar_base(df, cfg_pre)
+        X, y = preprocessar_base(df, cfg_pre, nome_base=nome)
         bases_Xy[nome] = (X, y)
         print(f"[base] {nome}: {X.shape[0]} fluxos, {X.shape[1]} atributos")
         print(f"[classes] {nome}: {sorted(str(c) for c in y.unique())}")
@@ -131,7 +131,7 @@ def main():
     # critérios diferentes, então o cache é segregado por contexto.
     # Eu sempre habilito o checkpoint local porque cada avaliação completa é cara.
     contexto = {
-        "formulacao": "biobjetivo_cross_medio_features_v1",
+        "formulacao": "biobjetivo_cross_medio_features_v2_float32",
         "classificador": nome_clf,
         "bases": sorted(bases_Xy.keys()),
         "arquivos": {
@@ -143,7 +143,7 @@ def main():
         "dados_completos": True,
         "seed": cfg_otm["seed"],
     }
-    sufixo = f"{nome_clf}_full_s{cfg_otm['seed']}"
+    sufixo = f"{nome_clf}_full_v2_s{cfg_otm['seed']}"
     cache = CacheAvaliacoes(
         os.path.join(checkpoint_dir, f"cache_{sufixo}.jsonl"), contexto
     )

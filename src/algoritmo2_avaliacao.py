@@ -111,7 +111,7 @@ def main():
     brutas = carregar_todas_as_bases(config)
     bases_Xy = {}
     for nome, df in brutas.items():
-        X, y = preprocessar_base(df, cfg_pre)
+        X, y = preprocessar_base(df, cfg_pre, nome_base=nome)
         bases_Xy[nome] = (X, y)
     bases_Xy, ordem = alinhar_colunas(bases_Xy)
 

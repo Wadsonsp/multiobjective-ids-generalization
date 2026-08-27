@@ -35,6 +35,15 @@ class TestRemocaoAusentesInfinitos:
         assert len(resultado) == 2
         assert np.isfinite(resultado["a"]).all()
 
+    def test_remove_valor_finito_maior_que_float32(self):
+        limite = float(np.finfo(np.float32).max)
+        df = pd.DataFrame({
+            "a": [1.0, limite * 2.0, -limite * 2.0, 4.0],
+            "b": [1.0, 2.0, 3.0, 4.0],
+        })
+        resultado = remover_ausentes_e_infinitos(df)
+        assert resultado["a"].tolist() == [1.0, 4.0]
+
     def test_nao_imputa_valores(self):
         # A decisão da Seção 4.1 é REMOVER, nunca imputar média/mediana
         df = pd.DataFrame({"a": [1.0, np.nan], "b": [10.0, 20.0]})

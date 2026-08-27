@@ -13,17 +13,33 @@ balanceado da árvore de decisão.
 """
 
 import numpy as np
+from pandas.api.types import is_numeric_dtype
 
 
 def remover_ausentes_e_infinitos(df):
-    """Remove fluxos com NaN ou inf em qualquer coluna numérica.
+    """Eu removo fluxos que a árvore não consegue representar com segurança.
 
-    Optei por remoção (e não imputação por média/mediana) porque valores
-    infinitos aqui costumam vir de divisões por zero em métricas derivadas
-    e de durações nulas - imputar mascararia o problema.
+    Além de NaN e infinito, eu rejeito valores cujo módulo ultrapassa o maior
+    número finito de ``float32``. O scikit-learn converte internamente as
+    features da árvore para esse tipo; sem esta verificação, valores extremos
+    virariam infinito durante o treinamento ou a previsão.
     """
-    df = df.replace([np.inf, -np.inf], np.nan)
-    return df.dropna(axis=0, how="any").reset_index(drop=True)
+    limite_float32 = np.finfo(np.float32).max
+    linhas_validas = np.ones(len(df), dtype=bool)
+
+    # Eu percorro uma coluna por vez para não criar uma segunda matriz com
+    # milhões de linhas somente para verificar os limites numéricos.
+    for coluna in df.columns:
+        serie = df[coluna]
+        if is_numeric_dtype(serie.dtype):
+            valores = serie.to_numpy(copy=False)
+            linhas_validas &= np.isfinite(valores)
+            linhas_validas &= valores <= limite_float32
+            linhas_validas &= valores >= -limite_float32
+        else:
+            linhas_validas &= serie.notna().to_numpy()
+
+    return df.loc[linhas_validas].reset_index(drop=True)
 
 
 def remover_atributos_vazamento(df, atributos_vazamento):
@@ -52,13 +68,21 @@ def separar_atributos_e_rotulo(df, coluna_rotulo="Attack", coluna_binaria="Label
     return X, y
 
 
-def preprocessar_base(df, config_pre):
+def preprocessar_base(df, config_pre, nome_base=None):
     """Pipeline completo da Seção 4.1 para uma base: retorna (X, y).
 
     Eu não reescalono as features porque a árvore de decisão compara limiares
     e, portanto, é invariante a transformações monotônicas de escala.
     """
+    total_antes = len(df)
     df = remover_ausentes_e_infinitos(df)
+    total_removidas = total_antes - len(df)
+    if total_removidas:
+        identificador = nome_base or "dataset"
+        print(
+            f"[higienizacao] {identificador}: removi {total_removidas} fluxos "
+            "com NaN, infinito ou valor fora do intervalo float32"
+        )
     df = remover_atributos_vazamento(df, config_pre["atributos_vazamento"])
     X, y = separar_atributos_e_rotulo(
         df,
