@@ -7,78 +7,51 @@
 # ---------------------------------------------------------------------
 # Datasets (família NF-v2 - Sarhan, Layeghy e Portmann [13])
 # Fonte oficial: UQ Research Data Manager (rdm.uq.edu.au)
-# No Colab, os arquivos ficam em MyDrive/mestrado/Datasets
+# Eu mantenho os arquivos localmente na pasta Datasets do projeto.
 # ---------------------------------------------------------------------
 datasets:
-  pasta_drive: "/content/drive/MyDrive/mestrado/Datasets"   # caminho quando rodando no Colab
-  pasta_local: "Datasets"                                   # cache local fora do Colab
+  pasta_local: "Datasets"
   bases:
     NF-UNSW-NB15-v2:
-      arquivo: "NF-UNSW-NB15-v2.csv"
-      url_oficial: "https://rdm.uq.edu.au/files/8c6e2a00-ef9c-11ed-827d-e762de186848"
+      arquivo: "NF-UNSW-NB15-V2.parquet"
     NF-ToN-IoT-v2:
-      arquivo: "NF-ToN-IoT-v2.csv"
-      url_oficial: "https://rdm.uq.edu.au/files/a4ad7080-ef9c-11ed-a964-b70596e96ad5"
-      # amostra estratificada de 2,0 milhões de fluxos para equiparar volume
-      # ao NF-UNSW-NB15-v2, preservando a proporção de todas as categorias
-      # (Seção 5.1 da dissertação)
-      amostra_estratificada: 2000000
+      arquivo: "NF-ToN-IoT-V2.parquet"
 
 # ---------------------------------------------------------------------
 # Pré-processamento (Seção 4.1)
 # ---------------------------------------------------------------------
 preprocessamento:
   # Atributos descartados por risco de vazamento de informação:
-  # IPs codificam topologia do ambiente; portas funcionam como atalhos de
-  # classificação (Flood et al. [7]); TTL reflete particularidades de SO
-  # e posicionamento dos hosts.
+  # Portas funcionam como atalhos de classificação; TTL reflete
+  # particularidades de SO e posicionamento dos hosts.
   atributos_vazamento:
-    - IPV4_SRC_ADDR
-    - IPV4_DST_ADDR
     - L4_SRC_PORT
     - L4_DST_PORT
     - MIN_TTL
     - MAX_TTL
   coluna_rotulo: "Attack"      # rótulo multiclasse (categoria de ataque)
   coluna_binaria: "Label"      # rótulo binário (descartado da matriz de atributos)
-  # Sem imputação: fluxos com NaN/inf são removidos para não introduzir
-  # distorções artificiais em atributos derivados do tráfego (Seção 4.1)
-  imputacao: false
 
 # ---------------------------------------------------------------------
-# Classificador h usado na otimização e fábrica de classificadores
-# (configurações exatas da Seção 5.2)
+# Classificador h usado nas duas fases
 # ---------------------------------------------------------------------
 classificador:
-  # opções: xgboost | random_forest | extra_trees | lightgbm |
-  #         logistic_regression | lda | knn | mlp
-  nome: "xgboost"
-  seed: 42
+  # Eu uso a árvore de profundidade 8 apresentada na definição original.
+  nome: "decision_tree"
 
 # ---------------------------------------------------------------------
 # Otimização multiobjetivo - Algoritmo 1 (NSGA-II, Deb et al. [12])
 # ---------------------------------------------------------------------
 otimizacao:
-  n_pop: 40            # tamanho da população (N_pop)
-  n_gen: 30            # número de gerações (N_gen)
-  pc: 0.9              # probabilidade de crossover
-  pm: 0.05             # probabilidade de mutação (bit-flip por gene)
+  n_pop: 24            # Eu uso a população do experimento já realizado.
+  n_gen: 15            # Eu uso quinze gerações como critério de parada.
   seed: 42
-  # Terceiro objetivo da formulação tri-objetivo (F1 intra, F1 cross, custo).
-  # k(x) é o indicador estrutural de custo (Seção 4.2); "tempo" usa o tempo
-  # médio de inferência medido. Ambos ficam registrados nos resultados.
-  objetivo_custo: "k"  # k | tempo
 
 # ---------------------------------------------------------------------
 # Avaliação - Algoritmo 2
 # ---------------------------------------------------------------------
 avaliacao:
   cv_folds: 5                  # validação cruzada estratificada intra-dataset
-  test_size_cross: 0.0         # 0.0 = usa a base de destino inteira no teste cross
-  # Subamostragem estratificada usada SOMENTE durante a busca do NSGA-II
-  # para viabilizar o custo computacional. A avaliação final do conjunto
-  # Pareto P* deve ser feita com amostra_busca: null (dados completos).
-  amostra_busca: 200000
   seed: 42
 
 # ---------------------------------------------------------------------
@@ -88,3 +61,4 @@ resultados:
   pasta_pareto: "Resultados/pareto"
   pasta_metricas: "Resultados/metricas"
   pasta_logs: "Resultados/logs"
+  pasta_checkpoints: "Resultados/checkpoints"

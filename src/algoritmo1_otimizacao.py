@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Execução do Algoritmo 1 - Otimização multiobjetivo (Figura 5).
+"""Eu executo a Fase 1: pré-filtro de features com NSGA-II.
 
-Pipeline completo: carrega as bases do Drive, aplica o pré-processamento
-da Seção 4.1, executa o NSGA-II com o AvaliarFitness do Algoritmo 2 e
-salva o conjunto Pareto P* e o histórico de critérios em Resultados/.
+Eu carrego os dois Parquets locais completos, aplico o pré-processamento,
+executo o problema biobjetivo e salvo localmente o conjunto Pareto e o
+histórico de todas as máscaras avaliadas.
 
 Uso:
-    python src/algoritmo1_otimizacao.py                       # config padrão
-    python src/algoritmo1_otimizacao.py --n-pop 60 --n-gen 50 # sobrescreve
-    python src/algoritmo1_otimizacao.py --amostra-busca 50000 # busca mais leve
-
-Observação importante de custo: cada avaliação de fitness treina o
-classificador em CV + nas duas direções cross-dataset. Para a fase de
-BUSCA uso a subamostragem estratificada (avaliacao.amostra_busca do
-config); a avaliação FINAL das soluções de P* deve ser refeita com os
-dados completos (--amostra-busca 0).
+    python src/algoritmo1_otimizacao.py
+    python src/algoritmo1_otimizacao.py --n-pop 24 --n-gen 15
 """
 
 import argparse
@@ -30,11 +23,12 @@ import yaml
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Modulos.checkpoint import CacheAvaliacoes, RegistroProgresso  # noqa: E402
-from Modulos.drive_loader import carregar_todas_as_bases  # noqa: E402
+from Modulos.carregamento import carregar_todas_as_bases  # noqa: E402
 from Modulos.otimizacao import executar_otimizacao  # noqa: E402
 from Modulos.preprocessamento import alinhar_colunas, preprocessar_base  # noqa: E402
 
 CONFIG_PADRAO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
+RAIZ_PROJETO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def carregar_config(caminho):
@@ -42,41 +36,35 @@ def carregar_config(caminho):
         return yaml.safe_load(f)
 
 
-def preparar_bases(config, amostra_busca=None):
-    """Linha 1 do Algoritmo 1: pré-processar os datasets em D."""
+def resolver_caminho_local(caminho):
+    """Eu resolvo saídas relativas a partir da raiz do repositório."""
+    return caminho if os.path.isabs(caminho) else os.path.join(RAIZ_PROJETO, caminho)
+
+
+def preparar_bases(config):
+    """Eu leio e pré-processo integralmente os dois datasets locais."""
     brutas = carregar_todas_as_bases(config)
     cfg_pre = config["preprocessamento"]
-    seed = config["avaliacao"]["seed"]
-
     bases_Xy = {}
     for nome, df in brutas.items():
-        # Amostra fixa da base (ex.: 2M do ToN-IoT, Seção 5.1) +
-        # subamostra adicional da fase de busca, quando configurada
-        n_base = config["datasets"]["bases"][nome].get("amostra_estratificada")
-        X, y = preprocessar_base(df, cfg_pre, n_amostras=n_base, seed=seed)
-        if amostra_busca:
-            from Modulos.preprocessamento import amostra_estratificada
-            import pandas as pd
-            df_xy = pd.concat([X, y], axis=1)
-            df_xy = amostra_estratificada(
-                df_xy, amostra_busca, coluna_rotulo=cfg_pre["coluna_rotulo"], seed=seed
-            )
-            y = df_xy[cfg_pre["coluna_rotulo"]]
-            X = df_xy.drop(columns=[cfg_pre["coluna_rotulo"]])
+        # Eu aplico somente limpeza e separação: nenhuma linha é amostrada.
+        X, y = preprocessar_base(df, cfg_pre)
         bases_Xy[nome] = (X, y)
         print(f"[base] {nome}: {X.shape[0]} fluxos, {X.shape[1]} atributos")
+        print(f"[classes] {nome}: {sorted(str(c) for c in y.unique())}")
 
-    # Alinho colunas entre as bases: a máscara x precisa indexar o mesmo
-    # atributo em qualquer base (vantagem do schema NF-v2 comum)
+    # Eu alinho as colunas para cada gene representar a mesma feature.
     bases_Xy, ordem = alinhar_colunas(bases_Xy)
     print(f"[schema] {len(ordem)} atributos candidatos (d={len(ordem)})")
     return bases_Xy, ordem
 
 
-def salvar_resultados(resultado, ordem_atributos, config, rotulo_execucao):
-    """Salva P* (máscaras + objetivos) e o histórico completo de critérios."""
-    pasta_pareto = config["resultados"]["pasta_pareto"]
-    pasta_metricas = config["resultados"]["pasta_metricas"]
+def salvar_resultados(
+    resultado, ordem_atributos, config, rotulo_execucao, configuracao_execucao
+):
+    """Eu salvo P* e o histórico completo em arquivos JSON locais."""
+    pasta_pareto = resolver_caminho_local(config["resultados"]["pasta_pareto"])
+    pasta_metricas = resolver_caminho_local(config["resultados"]["pasta_metricas"])
     os.makedirs(pasta_pareto, exist_ok=True)
     os.makedirs(pasta_metricas, exist_ok=True)
 
@@ -84,6 +72,8 @@ def salvar_resultados(resultado, ordem_atributos, config, rotulo_execucao):
     with open(caminho_pareto, "w", encoding="utf-8") as f:
         json.dump(
             {
+                "fase": "Fase 1 - pre-filtro NSGA-II",
+                "configuracao": configuracao_execucao,
                 "atributos": ordem_atributos,
                 "nomes_objetivos": resultado["nomes_objetivos"],
                 "mascaras": resultado["mascaras"].tolist(),
@@ -111,18 +101,10 @@ def main():
     parser.add_argument("--config", default=CONFIG_PADRAO)
     parser.add_argument("--n-pop", type=int, default=None)
     parser.add_argument("--n-gen", type=int, default=None)
-    parser.add_argument("--pc", type=float, default=None)
-    parser.add_argument("--pm", type=float, default=None)
     parser.add_argument("--classificador", default=None)
     parser.add_argument(
-        "--amostra-busca", type=int, default=None,
-        help="Subamostra estratificada da fase de busca (0 = dados completos)",
-    )
-    parser.add_argument(
         "--checkpoint-dir", default=None,
-        help="Pasta (idealmente no Drive) para cache de avaliações e "
-             "progresso por geração. Para RETOMAR após queda do Colab, "
-             "basta reexecutar o MESMO comando com a mesma pasta.",
+        help="pasta local para cache e progresso (default: config.yaml)",
     )
     args = parser.parse_args()
 
@@ -132,45 +114,45 @@ def main():
     # Argumentos de linha de comando sobrescrevem o config.yaml
     n_pop = args.n_pop or cfg_otm["n_pop"]
     n_gen = args.n_gen or cfg_otm["n_gen"]
-    pc = args.pc if args.pc is not None else cfg_otm["pc"]
-    pm = args.pm if args.pm is not None else cfg_otm["pm"]
     nome_clf = args.classificador or config["classificador"]["nome"]
-    amostra_busca = (
-        args.amostra_busca
-        if args.amostra_busca is not None
-        else config["avaliacao"]["amostra_busca"]
+    checkpoint_dir = resolver_caminho_local(
+        args.checkpoint_dir or config["resultados"]["pasta_checkpoints"]
     )
-    if amostra_busca == 0:
-        amostra_busca = None
 
-    print(f"[config] h={nome_clf} | N_pop={n_pop} | N_gen={n_gen} | "
-          f"pc={pc} | pm={pm} | amostra_busca={amostra_busca}")
+    print(
+        f"[config] h={nome_clf} | N_pop={n_pop} | N_gen={n_gen} | "
+        "dados completos | operadores padrão do NSGA-II"
+    )
 
-    bases_Xy, ordem = preparar_bases(config, amostra_busca)
+    bases_Xy, ordem = preparar_bases(config)
 
-    # Checkpoint: cache de avaliações + progresso por geração no Drive.
+    # Eu mantenho cache de avaliações e progresso por geração no disco local.
     # O contexto identifica o experimento; mudar qualquer item daria
     # critérios diferentes, então o cache é segregado por contexto.
-    cache, registro = None, None
-    if args.checkpoint_dir:
-        contexto = {
-            "classificador": nome_clf,
-            "bases": sorted(bases_Xy.keys()),
-            "d": len(ordem),
-            "cv_folds": config["avaliacao"]["cv_folds"],
-            "amostra_busca": amostra_busca,
-            "seed": cfg_otm["seed"],
-            "objetivo_custo": cfg_otm["objetivo_custo"],
-        }
-        sufixo = f"{nome_clf}_a{amostra_busca or 'full'}_s{cfg_otm['seed']}"
-        cache = CacheAvaliacoes(
-            os.path.join(args.checkpoint_dir, f"cache_{sufixo}.jsonl"), contexto
-        )
-        registro = RegistroProgresso(
-            os.path.join(args.checkpoint_dir, f"progresso_{sufixo}.json")
-        )
-        print(f"[checkpoint] {len(cache)} avaliações recuperadas do cache "
-              f"em {args.checkpoint_dir}")
+    # Eu sempre habilito o checkpoint local porque cada avaliação completa é cara.
+    contexto = {
+        "formulacao": "biobjetivo_cross_medio_features_v1",
+        "classificador": nome_clf,
+        "bases": sorted(bases_Xy.keys()),
+        "arquivos": {
+            nome: info["arquivo"]
+            for nome, info in config["datasets"]["bases"].items()
+        },
+        "atributos": ordem,
+        "d": len(ordem),
+        "dados_completos": True,
+        "seed": cfg_otm["seed"],
+    }
+    sufixo = f"{nome_clf}_full_s{cfg_otm['seed']}"
+    cache = CacheAvaliacoes(
+        os.path.join(checkpoint_dir, f"cache_{sufixo}.jsonl"), contexto
+    )
+    registro = RegistroProgresso(
+        os.path.join(checkpoint_dir, f"progresso_{sufixo}.json")
+    )
+    print(
+        f"[checkpoint] {len(cache)} avaliações recuperadas em {checkpoint_dir}"
+    )
 
     inicio = time.time()
     resultado = executar_otimizacao(
@@ -178,11 +160,7 @@ def main():
         nome_clf,
         n_pop=n_pop,
         n_gen=n_gen,
-        pc=pc,
-        pm=pm,
         seed=cfg_otm["seed"],
-        cv_folds=config["avaliacao"]["cv_folds"],
-        objetivo_custo=cfg_otm["objetivo_custo"],
         cache=cache,
         registro_progresso=registro,
     )
@@ -192,7 +170,20 @@ def main():
           f"({duracao / 60:.1f} min)")
 
     rotulo = time.strftime("%Y%m%d_%H%M%S") + f"_{nome_clf}"
-    salvar_resultados(resultado, ordem, config, rotulo)
+    salvar_resultados(
+        resultado,
+        ordem,
+        config,
+        rotulo,
+        {
+            "classificador": nome_clf,
+            "n_pop": n_pop,
+            "n_gen": n_gen,
+            "seed": cfg_otm["seed"],
+            "dados_completos": True,
+            "operadores_nsga2": "padrao_pymoo",
+        },
+    )
 
 
 if __name__ == "__main__":

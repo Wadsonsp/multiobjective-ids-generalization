@@ -1,159 +1,160 @@
 # -*- coding: utf-8 -*-
-"""Testes do Algoritmo 1 (NSGA-II), do drive_loader e smoke test de
-integração do pipeline completo.
+"""Eu testo o problema biobjetivo, o NSGA-II e o carregamento local."""
 
-O que valido aqui:
-- população inicial binária com a forma correta;
-- reparo de máscara vazia;
-- soluções de P* mutuamente não-dominadas;
-- reprodutibilidade com seed fixa;
-- localização/validação de arquivos do drive_loader (com arquivos
-  temporários, sem rede);
-- pipeline ponta a ponta em escala mínima (smoke test).
-"""
-
+import json
 import os
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from Modulos.drive_loader import (
+from Modulos.carregamento import (
     COLUNAS_OBRIGATORIAS_NFV2,
+    carregar_dataset,
+    carregar_todas_as_bases,
     localizar_arquivo,
     validar_schema_nfv2,
 )
-from Modulos.otimizacao import (
-    ProblemaSelecaoCaracteristicas,
-    executar_otimizacao,
-    reparar_mascara_vazia,
-)
+from Modulos.otimizacao import ProblemaSelecaoCaracteristicas, executar_otimizacao
 
-CLF_RAPIDO = "lda"
+
+CLF_RAPIDO = "decision_tree"
 
 
 def _domina(f_a, f_b):
-    """a domina b se for <= em tudo e < em pelo menos um objetivo."""
+    """Eu verifico a definição matemática de dominância de Pareto."""
     return np.all(f_a <= f_b) and np.any(f_a < f_b)
 
 
-class TestReparoMascara:
-    def test_mascara_vazia_ganha_um_bit(self):
-        rng = np.random.RandomState(0)
-        reparada = reparar_mascara_vazia(np.zeros(10, dtype=bool), rng)
-        assert reparada.sum() == 1
-
-    def test_mascara_valida_nao_muda(self):
-        rng = np.random.RandomState(0)
-        original = np.array([True, False, True])
-        assert np.array_equal(reparar_mascara_vazia(original, rng), original)
-
-
-class TestProblema:
-    def test_dimensoes_do_problema(self, bases_Xy):
-        problema = ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO, cv_folds=2)
+class TestProblemaBiobjetivo:
+    def test_dimensoes_e_limites(self, bases_Xy):
+        problema = ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO)
         d = bases_Xy["BASE_A"][0].shape[1]
-        # tri-objetivo (F1 intra, F1 cross, custo) em {0,1}^d
         assert problema.n_var == d
-        assert problema.n_obj == 3
+        assert problema.n_obj == 2
+        assert np.all(problema.xl == 0)
+        assert np.all(problema.xu == 1)
 
-    def test_avaliacao_alimenta_historico(self, bases_Xy):
-        problema = ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO, cv_folds=2)
+    def test_limiar_de_meio_seleciona_features(self, bases_Xy):
+        problema = ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO)
+        x = np.array([0.49, 0.50, 0.90] + [0.1] * (problema.d - 3))
+        assert problema.decidir_features_mantidas(x).tolist() == [1, 2]
+        assert problema.criar_mascara_binaria(x).sum() == 2
+
+    def test_mascara_vazia_recebe_penalidade(self, bases_Xy):
+        problema = ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO)
         out = {}
-        x = np.ones(problema.d, dtype=bool)
+        problema._evaluate(np.zeros(problema.d), out)
+        assert out["F"] == [1.0, 1.0]
+        assert problema.historico[-1]["avaliacao_valida"] is False
+
+    def test_formula_dos_dois_objetivos(self, bases_Xy, monkeypatch):
+        import Modulos.otimizacao as otm
+
+        def avaliacao_controlada(mascara, bases, classificador, seed):
+            return {
+                "f1_macro_cross_por_direcao": {"A->B": 0.70, "B->A": 0.90},
+                "diagnostico_cross": {},
+                "tempo_medio_inferencia": 0.001,
+                "numero_atributos": int(np.sum(mascara)),
+            }
+
+        monkeypatch.setattr(otm, "avaliar_fase1_cross_dataset", avaliacao_controlada)
+        problema = otm.ProblemaSelecaoCaracteristicas(bases_Xy, CLF_RAPIDO)
+        x = np.zeros(problema.d)
+        x[: problema.d // 2] = 0.8
+        out = {}
         problema._evaluate(x, out)
-        assert len(out["F"]) == 3
-        # Todos os critérios do Algoritmo 2 ficam no histórico
-        assert "f1_macro_cross_por_direcao" in problema.historico[0]
+        assert out["F"][0] == pytest.approx(0.20)
+        assert out["F"][1] == pytest.approx((problema.d // 2) / problema.d)
+        assert problema.historico[-1]["f1_macro_cross_medio"] == pytest.approx(0.80)
+
+    def test_exige_exatamente_dois_datasets(self, bases_Xy):
+        apenas_uma = {"BASE_A": bases_Xy["BASE_A"]}
+        with pytest.raises(ValueError, match="exatamente dois datasets"):
+            ProblemaSelecaoCaracteristicas(apenas_uma, CLF_RAPIDO)
 
 
 class TestExecucaoNSGA2:
-    @pytest.fixture(scope="class")
-    def resultado(self, request):
-        # Execução mínima compartilhada entre os testes da classe
-        bases_Xy = request.getfixturevalue("bases_Xy")
-        return executar_otimizacao(
+    def test_retorna_mascaras_binarias_e_dois_objetivos(self, bases_Xy):
+        resultado = executar_otimizacao(
+            bases_Xy, CLF_RAPIDO, n_pop=6, n_gen=2,
+            seed=42, verbose=False,
+        )
+        assert resultado["mascaras"].ndim == 2
+        assert set(np.unique(resultado["mascaras"])).issubset({0, 1})
+        assert resultado["objetivos"].shape[1] == 2
+        assert len({tuple(m) for m in resultado["mascaras"]}) == len(
+            resultado["mascaras"]
+        )
+
+    def test_pareto_mutuamente_nao_dominado(self, bases_Xy):
+        resultado = executar_otimizacao(
             bases_Xy, CLF_RAPIDO, n_pop=8, n_gen=3,
-            pc=0.9, pm=0.1, seed=42, cv_folds=2, verbose=False,
+            seed=42, verbose=False,
         )
-
-    # getfixturevalue não resolve fixtures de função em escopo de classe,
-    # então materializo a fixture aqui
-    @pytest.fixture(autouse=True)
-    def _injeta_bases(self, bases_Xy, request):
-        request.cls._bases = bases_Xy
-
-    def test_retorna_solucoes_binarias(self):
-        r = executar_otimizacao(
-            self._bases, CLF_RAPIDO, n_pop=8, n_gen=2,
-            seed=42, cv_folds=2, verbose=False,
-        )
-        assert r["mascaras"].ndim == 2
-        assert set(np.unique(r["mascaras"])).issubset({0, 1})
-        assert r["mascaras"].shape[1] == self._bases["BASE_A"][0].shape[1]
-
-    def test_pareto_mutuamente_nao_dominado(self):
-        # Definição de P*: nenhuma solução domina outra (linhas 13-14)
-        r = executar_otimizacao(
-            self._bases, CLF_RAPIDO, n_pop=8, n_gen=3,
-            seed=42, cv_folds=2, verbose=False,
-        )
-        F = r["objetivos"]
-        for i in range(len(F)):
-            for j in range(len(F)):
+        objetivos = resultado["objetivos"]
+        for i in range(len(objetivos)):
+            for j in range(len(objetivos)):
                 if i != j:
-                    assert not _domina(F[i], F[j]), (
-                        f"Solução {i} domina {j}: P* inválido"
-                    )
+                    assert not _domina(objetivos[i], objetivos[j])
 
-    def test_reprodutivel_com_seed(self):
-        r1 = executar_otimizacao(
-            self._bases, CLF_RAPIDO, n_pop=6, n_gen=2,
-            seed=123, cv_folds=2, verbose=False,
-        )
-        r2 = executar_otimizacao(
-            self._bases, CLF_RAPIDO, n_pop=6, n_gen=2,
-            seed=123, cv_folds=2, verbose=False,
-        )
+    def test_reprodutivel_com_seed(self, bases_Xy):
+        kwargs = dict(n_pop=6, n_gen=2, seed=123, verbose=False)
+        r1 = executar_otimizacao(bases_Xy, CLF_RAPIDO, **kwargs)
+        r2 = executar_otimizacao(bases_Xy, CLF_RAPIDO, **kwargs)
         assert np.array_equal(r1["mascaras"], r2["mascaras"])
-
-    def test_historico_cobre_todas_as_avaliacoes(self):
-        r = executar_otimizacao(
-            self._bases, CLF_RAPIDO, n_pop=6, n_gen=2,
-            seed=42, cv_folds=2, verbose=False,
-        )
-        # No mínimo a população inicial inteira foi avaliada
-        assert len(r["historico"]) >= 6
+        assert np.allclose(r1["objetivos"], r2["objetivos"])
 
 
-class TestDriveLoader:
+class TestCarregamentoLocal:
+    def _config_fake(self, pasta_local, arquivo="mini.csv"):
+        return {
+            "datasets": {
+                "pasta_local": str(pasta_local),
+                "bases": {"MINI-NFV2": {"arquivo": arquivo}},
+            }
+        }
+
+    def _base_nfv2_sintetica(self):
+        return pd.DataFrame({c: [1, 2, 3] for c in COLUNAS_OBRIGATORIAS_NFV2})
+
     def test_localiza_arquivo_local(self, tmp_path):
         arquivo = tmp_path / "base.csv"
         arquivo.write_text("a,b\n1,2\n")
-        caminho = localizar_arquivo("base.csv", "/drive/inexistente", str(tmp_path))
-        assert caminho == str(arquivo)
+        assert localizar_arquivo("base.csv", str(tmp_path)) == str(arquivo)
 
-    def test_arquivo_inexistente_orienta_setup(self, tmp_path):
-        # A mensagem precisa apontar para o script de setup do Drive
-        with pytest.raises(FileNotFoundError, match="setup_datasets_drive"):
-            localizar_arquivo("nao_existe.csv", "/drive/x", str(tmp_path))
+    def test_arquivo_inexistente_orienta_pasta_local(self, tmp_path):
+        with pytest.raises(FileNotFoundError, match="Datasets"):
+            localizar_arquivo("nao_existe.parquet", str(tmp_path))
 
-    def test_valida_schema_nfv2_completo(self):
-        df = pd.DataFrame({c: [0] for c in COLUNAS_OBRIGATORIAS_NFV2})
-        assert validar_schema_nfv2(df) is True
-
-    def test_rejeita_schema_invalido(self):
-        df = pd.DataFrame({"qualquer_coisa": [1]})
+    def test_valida_schema_nfv2(self):
+        assert validar_schema_nfv2(self._base_nfv2_sintetica()) is True
         with pytest.raises(ValueError, match="NF-v2"):
-            validar_schema_nfv2(df, nome_base="TESTE")
+            validar_schema_nfv2(pd.DataFrame({"qualquer": [1]}))
+
+    def test_carrega_csv_local(self, tmp_path):
+        self._base_nfv2_sintetica().to_csv(tmp_path / "mini.csv", index=False)
+        df = carregar_dataset("MINI-NFV2", self._config_fake(tmp_path))
+        assert len(df) == 3
+
+    def test_carrega_parquet_local(self, tmp_path):
+        self._base_nfv2_sintetica().to_parquet(tmp_path / "mini.parquet", index=False)
+        config = self._config_fake(tmp_path, arquivo="mini.parquet")
+        df = carregar_dataset("MINI-NFV2", config, nrows=2)
+        assert len(df) == 2
+
+    def test_carrega_dicionario_de_bases(self, tmp_path):
+        self._base_nfv2_sintetica().to_csv(tmp_path / "mini.csv", index=False)
+        bases = carregar_todas_as_bases(self._config_fake(tmp_path), nrows=2)
+        assert set(bases) == {"MINI-NFV2"}
+        assert len(bases["MINI-NFV2"]) == 2
 
 
 class TestIntegracao:
-    def test_pipeline_ponta_a_ponta(self, base_a, base_b, config_pre, tmp_path):
-        """Smoke test: bases brutas -> pré-processamento -> Algoritmo 1 ->
-        P* salvo em disco. Escala mínima só para validar o encadeamento."""
-        import json
-
+    def test_pipeline_sintetico_ate_pareto_salvo(
+        self, base_a, base_b, config_pre, tmp_path
+    ):
         from Modulos.preprocessamento import alinhar_colunas, preprocessar_base
 
         bases = {
@@ -161,56 +162,18 @@ class TestIntegracao:
             "BASE_B": preprocessar_base(base_b, config_pre),
         }
         bases, ordem = alinhar_colunas(bases)
-
-        r = executar_otimizacao(
+        resultado = executar_otimizacao(
             bases, CLF_RAPIDO, n_pop=6, n_gen=2,
-            seed=42, cv_folds=2, verbose=False,
+            seed=42, verbose=False,
         )
-
-        # Simulo a gravação do P* como no src/algoritmo1_otimizacao.py
         caminho = tmp_path / "pareto_teste.json"
         with open(caminho, "w", encoding="utf-8") as f:
             json.dump({
                 "atributos": ordem,
-                "mascaras": r["mascaras"].tolist(),
-                "objetivos": r["objetivos"].tolist(),
+                "mascaras": resultado["mascaras"].tolist(),
+                "objetivos": resultado["objetivos"].tolist(),
             }, f)
-
         assert os.path.exists(caminho)
         with open(caminho, encoding="utf-8") as f:
             salvo = json.load(f)
         assert len(salvo["mascaras"]) == len(salvo["objetivos"]) >= 1
-        assert len(salvo["atributos"]) == len(salvo["mascaras"][0])
-
-
-class TestCarregamentoDataset:
-    def _config_fake(self, pasta_local):
-        # Config mínimo apontando para um CSV sintético em pasta temporária
-        return {
-            "datasets": {
-                "pasta_drive": "/content/drive/inexistente",
-                "pasta_local": str(pasta_local),
-                "bases": {"MINI-NFV2": {"arquivo": "mini.csv"}},
-            }
-        }
-
-    def _csv_nfv2_sintetico(self, caminho):
-        df = pd.DataFrame({c: [1, 2, 3] for c in COLUNAS_OBRIGATORIAS_NFV2})
-        df.to_csv(caminho, index=False)
-
-    def test_carregar_dataset_valida_e_retorna(self, tmp_path):
-        from Modulos.drive_loader import carregar_dataset
-
-        self._csv_nfv2_sintetico(tmp_path / "mini.csv")
-        df = carregar_dataset("MINI-NFV2", self._config_fake(tmp_path))
-        assert len(df) == 3
-        assert "Attack" in df.columns
-
-    def test_carregar_todas_as_bases_monta_dicionario_D(self, tmp_path):
-        # D = {nome: DataFrame}, entrada dos Algoritmos 1 e 2
-        from Modulos.drive_loader import carregar_todas_as_bases
-
-        self._csv_nfv2_sintetico(tmp_path / "mini.csv")
-        D = carregar_todas_as_bases(self._config_fake(tmp_path), nrows=2)
-        assert set(D.keys()) == {"MINI-NFV2"}
-        assert len(D["MINI-NFV2"]) == 2

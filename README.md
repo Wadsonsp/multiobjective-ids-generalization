@@ -1,97 +1,104 @@
-﻿# multiobjective-ids-generalization
+# Seleção multiobjetivo de features para IDS cross-dataset
 
-Repositório experimental associado à dissertação sobre Sistemas de Detecção de Intrusão baseados em Aprendizado de Máquina, com foco em generalização cross-dataset e otimização multiobjetivo.
+Projeto experimental da dissertação sobre generalização cross-dataset em
+Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pré-filtro (Fase 1)**
+para encontrar compromissos entre desempenho cross-dataset e quantidade de
+features. A escolha e a análise detalhada das soluções acontecem na **Fase 2**.
 
-## Descrição
+## Formulação biobjetivo
 
-Este projeto implementa um pipeline experimental para avaliação de modelos de detecção de intrusão baseados em aprendizado de máquina, utilizando datasets NetFlow. A abordagem considera a preparação dos dados, higienização, balanceamento, seleção de características e avaliação de desempenho em múltiplos conjuntos de dados.
+Cada solução é um vetor real `x` com um gene em `[0, 1]` para cada feature. Eu
+mantenho a feature quando `x >= 0.5` e minimizo:
 
-A estrutura experimental busca investigar a capacidade de generalização cross-dataset dos modelos, analisando o desempenho em diferentes domínios de dados. Para isso, o código utiliza redes neurais do tipo MLP e otimização multiobjetivo com NSGA-II, considerando métricas associadas ao desempenho F1 em diferentes datasets.
+1. `1 - média(F1-macro UNSW→ToN, F1-macro ToN→UNSW)`;
+2. `número de features selecionadas / número total de features`.
 
-## Objetivo
+O F1 de cada direção, o diagnóstico de incompatibilidade de taxonomia e o erro
+nas classes conhecidas permanecem separados nos artefatos. A quantidade de
+soluções não dominadas não é definida previamente.
 
-Avaliar estratégias de detecção de intrusão baseadas em aprendizado de máquina que combinem:
+## Estrutura
 
-- generalização cross-dataset;
-- seleção de características;
-- otimização multiobjetivo;
-- avaliação comparativa entre datasets NetFlow;
-- redução de custo computacional por meio da escolha otimizada de atributos e arquitetura do modelo.
-
-## Tecnologias utilizadas
-
-- Python
-- Pandas
-- NumPy
-- Scikit-learn
-- TensorFlow/Keras
-- Pymoo
-- FastAI
-- Pickle
-
-## Estrutura experimental
-
-O código realiza:
-
-1. carregamento dos datasets NetFlow;
-2. remoção de atributos não utilizados;
-3. higienização dos dados;
-4. balanceamento das classes;
-5. redução de uso de memória;
-6. padronização dos dados;
-7. treinamento de modelo MLP;
-8. otimização multiobjetivo com NSGA-II;
-9. avaliação em múltiplos datasets;
-10. salvamento de checkpoints e resultados.
-
-## Tema da pesquisa
-
-Sistemas de Detecção de Intrusão Baseados em Aprendizado de Máquina com Generalização Cross-Dataset e Otimização Multiobjetivo.
-
-## Estrutura do projeto (Algoritmos 1 e 2 do Capítulo 4)
-
-```
-├── Datasets/            # cache local (vazio no git); dados oficiais no Drive em mestrado/Datasets
-├── Modulos/             # pacote reutilizável
-│   ├── drive_loader.py        # localização/validação dos datasets (Colab/local)
-│   ├── preprocessamento.py    # Seção 4.1 (limpeza, vazamento, Min-Max, estratificação)
-│   ├── classificadores.py     # fábrica dos 8 classificadores (Seção 5.2)
-│   ├── avaliacao.py           # Algoritmo 2 - AvaliarFitness(x, D, h)
-│   ├── otimizacao.py          # Algoritmo 1 - NSGA-II (pymoo)
-│   ├── checkpoint.py          # cache de avaliações + progresso (retomada pós-queda)
-│   └── selecao_rfe.py         # baseline RFE (Capítulo 5, monobjetivo)
-├── src/
-│   ├── config.yaml                # parâmetros centrais dos experimentos
-│   ├── setup_datasets_drive.py    # download oficial UQ -> MyDrive/mestrado/Datasets (Colab)
-│   ├── algoritmo1_otimizacao.py   # executável do Algoritmo 1
-│   └── algoritmo2_avaliacao.py    # executável do Algoritmo 2 (baseline ou solução do P*)
-├── Resultados/          # pareto/, metricas/, logs/
-├── notebooks/
-│   └── experimentos_dissertacao.ipynb  # orquestrador das execuções no Colab
-└── tests/               # suíte pytest (cobertura mínima 85%, atual ~96%)
+```text
+Datasets/                  dois Parquets locais completos
+Modulos/
+  avaliacao.py             avaliações intra e cross-dataset
+  carregamento.py          leitura local e validação dos Parquets
+  checkpoint.py            cache e progresso local do NSGA-II
+  classificadores.py       fábrica de classificadores
+  otimizacao.py            problema biobjetivo e NSGA-II
+  preprocessamento.py      limpeza, taxonomia e alinhamento
+src/
+  algoritmo1_otimizacao.py Fase 1: pré-filtro NSGA-II
+  algoritmo2_avaliacao.py  Fase 2: avaliação detalhada
+  config.yaml              configuração central
+  graficos_cross.py        figuras da análise
+tests/                     testes unitários e de integração sintética
+Resultados/                Pareto, métricas, checkpoints, logs e figuras
 ```
 
-## Como executar
+## Dados locais
+
+Antes de executar, estes arquivos devem existir:
+
+```text
+Datasets/NF-UNSW-NB15-V2.parquet
+Datasets/NF-ToN-IoT-V2.parquet
+```
+
+O pipeline lê os dois arquivos completos. Não há parâmetro de subamostragem no
+fluxo científico.
+
+## Instalação
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
 
-# 1) Uma única vez, no Colab: baixar as bases para o Drive
-python src/setup_datasets_drive.py
+## Execução
 
-# 2) Otimização multiobjetivo (Algoritmo 1) com checkpoint no Drive:
-#    se o Colab cair, REEXECUTAR O MESMO COMANDO retoma do ponto da falha
-python src/algoritmo1_otimizacao.py --checkpoint-dir /content/drive/MyDrive/mestrado/Resultados/checkpoints
+Fase 1, com população 24, 15 gerações e operadores padrão do pymoo:
 
-# 3) Avaliação final de uma solução do P* com dados completos (Algoritmo 2)
-python src/algoritmo2_avaliacao.py --pareto Resultados/pareto/<arquivo>.json --solucao 0 --amostra 0
+```bash
+python src/algoritmo1_otimizacao.py
+```
 
-# Baseline RFE do Capítulo 5 (Tabela 3: --todos avalia os 8 classificadores)
-python src/baseline_rfe.py --todos
+O cache fica em `Resultados/checkpoints`. Para retomar uma interrupção, eu
+executo novamente o mesmo comando.
 
-# Testes com cobertura
+Fase 2, avaliando todas as soluções encontradas:
+
+```bash
+python src/algoritmo2_avaliacao.py \
+  --pareto Resultados/pareto/pareto_<execucao>.json \
+  --todas
+```
+
+Também posso avaliar uma solução ou a máscara completa:
+
+```bash
+python src/algoritmo2_avaliacao.py --pareto <arquivo.json> --solucao 0
+python src/algoritmo2_avaliacao.py --mascara cheia
+```
+
+Depois da Fase 2:
+
+```bash
+python src/graficos_cross.py
+```
+
+## Testes
+
+```bash
 pytest
 ```
 
-O classificador h, os parâmetros do NSGA-II (N_pop, N_gen, pc, pm) e a
-subamostragem da fase de busca são configurados em `src/config.yaml`.
+Os testes usam bases sintéticas pequenas. Eles não reduzem nem substituem os
+datasets usados na execução científica.
+
+## Referência dos datasets
+
+Sarhan, Layeghy e Portmann, *Towards a Standard Feature Set for Network
+Intrusion Detection System Datasets*, Mobile Networks and Applications, 2022.

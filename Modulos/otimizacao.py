@@ -1,108 +1,127 @@
 # -*- coding: utf-8 -*-
-"""Algoritmo 1 - Otimização multiobjetivo para seleção de características
-(Figura 5 da dissertação), implementado com NSGA-II (Deb et al. [12])
-via pymoo.
+"""Eu implemento a Fase 1: pré-filtro de features com NSGA-II.
 
-Correspondência com o pseudocódigo:
- 1: Pré-processar os datasets em D  -> feito antes, em src/algoritmo1_otimizacao.py
- 2-3: Inicializar população P com N_pop indivíduos binários x em {0,1}^d
-      -> amostragem BinaryRandomSampling
- 4-7: para cada geração, para cada x em P: critérios(x) <- AvaliarFitness(x, D, h)
-      -> ProblemaSelecaoCaracteristicas._evaluate chama Modulos.avaliacao
- 8: Ordenar P por não-dominância e diversidade -> non-dominated sorting +
-    crowding distance internos do NSGA-II
- 9-11: Selecionar, aplicar crossover (pc) e mutação (pm), gerar nova população
-      -> TwoPointCrossover(prob=pc) e BitflipMutation(prob=pm)
-12-14: Retornar P* (conjunto de soluções não-dominadas) -> res.X / res.F
+Eu sigo a formulação didática apresentada no código original: cada variável
+de decisão fica no intervalo [0, 1] e eu seleciono uma feature quando o gene
+é maior ou igual a 0,5. O pymoo minimiza os dois objetivos:
 
-Formulação tri-objetivo (cronograma do Capítulo 6: F1 intra, cross, custo).
-O pymoo MINIMIZA, então converto os F1 para (1 - F1):
-  f1 = 1 - média do F1-macro intra-dataset
-  f2 = 1 - média do F1-macro cross-dataset (média só para guiar a busca;
-       os valores POR DIREÇÃO ficam registrados no histórico de critérios)
-  f3 = custo: k(x)/d (indicador estrutural, default) ou tempo de inferência
+1. erro cross-dataset = 1 - média dos F1-macro nas duas direções;
+2. proporção de features = número selecionado / número total.
+
+Eu uso o NSGA-II padrão do pymoo. Informo somente o tamanho da população;
+amostragem, crossover, mutação e seleção permanecem com os padrões da
+biblioteca. O número de gerações é apenas o critério de parada do experimento.
 """
 
 import numpy as np
 from pymoo.algorithms.moo.nsga2 import NSGA2
 from pymoo.core.problem import ElementwiseProblem
-from pymoo.operators.crossover.pntx import TwoPointCrossover
-from pymoo.operators.mutation.bitflip import BitflipMutation
-from pymoo.operators.sampling.rnd import BinaryRandomSampling
 from pymoo.optimize import minimize
 
-from Modulos.avaliacao import avaliar_fitness
-
-
-def reparar_mascara_vazia(mascara, rng):
-    """Garante pelo menos 1 atributo selecionado.
-
-    O bit-flip pode zerar a máscara inteira; um classificador sem
-    atributos não faz sentido, então ligo uma posição aleatória.
-    """
-    mascara = np.asarray(mascara).astype(bool).copy()
-    if not mascara.any():
-        mascara[rng.randint(0, mascara.shape[0])] = True
-    return mascara
+from Modulos.avaliacao import avaliar_fase1_cross_dataset
 
 
 class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
-    """Problema binário tri-objetivo avaliado pelo Algoritmo 2."""
+    """Eu defino o problema cross-dataset com exatamente dois objetivos.
 
-    def __init__(self, bases_Xy, nome_clf, cv_folds=5, seed=42,
-                 objetivo_custo="k", cache=None):
-        # d = número de atributos candidatos (colunas já alinhadas)
+    Para cada solução, eu uso a mesma máscara nos dois datasets. Eu treino
+    em uma base completa e testo na outra completa, nas duas direções. Em
+    seguida, eu combino os dois F1-macro em um único objetivo de desempenho
+    e mantenho o número de features como o segundo objetivo.
+    """
+
+    def __init__(self, bases_Xy, nome_clf, seed=42, cache=None):
+        # Eu guardo os dois datasets já alinhados para acessá-los em _evaluate.
+        if len(bases_Xy) != 2:
+            raise ValueError(
+                "Eu preciso de exatamente dois datasets para avaliar as duas direções."
+            )
         self.d = next(iter(bases_Xy.values()))[0].shape[1]
         self.bases_Xy = bases_Xy
         self.nome_clf = nome_clf
-        self.cv_folds = cv_folds
         self.seed = seed
-        self.objetivo_custo = objetivo_custo
-        # Cache persistente de avaliações (Modulos/checkpoint.py): com
-        # seed fixa o NSGA-II é determinístico, então reexecutar após uma
-        # queda do Colab vira "replay" instantâneo até o ponto da falha
+
+        # Eu uso o cache para não treinar novamente uma máscara já avaliada.
         self.cache = cache
-        self.rng = np.random.RandomState(seed)
-        # Histórico com TODOS os critérios de cada solução avaliada
-        # (inclusive F1 cross por direção), para análise posterior
+
+        # Eu mantenho o histórico completo para explicar cada ponto de Pareto.
         self.historico = []
-        super().__init__(n_var=self.d, n_obj=3, n_constr=0, xl=0, xu=1, vtype=bool)
 
-    def _evaluate(self, x, out, *args, **kwargs):
-        # Linha 6 do Algoritmo 1: critérios(x) <- AvaliarFitness(x, D, h)
-        mascara = reparar_mascara_vazia(x, self.rng)
-        # Atenção: comparar com None, e não usar truthiness - o cache
-        # define __len__ e um cache VAZIO (início da execução) é falsy,
-        # o que silenciosamente desligaria a gravação
-        criterios = self.cache.obter(mascara) if self.cache is not None else None
-        if criterios is None:
-            criterios = avaliar_fitness(
-                mascara, self.bases_Xy, self.nome_clf, self.cv_folds, self.seed
-            )
-            if self.cache is not None:
-                # Gravação imediata no Drive: se a sessão cair agora,
-                # esta avaliação já está salva
-                self.cache.registrar(mascara, criterios)
-
-        f1_intra_medio = float(np.mean(list(criterios["f1_macro_intra"].values())))
-        f1_cross_medio = float(
-            np.mean(list(criterios["f1_macro_cross_por_direcao"].values()))
+        # Eu crio um gene em [0, 1] para cada feature e declaro dois objetivos.
+        super().__init__(
+            n_var=self.d,
+            n_obj=2,
+            n_constr=0,
+            xl=np.zeros(self.d),
+            xu=np.ones(self.d),
         )
 
-        if self.objetivo_custo == "tempo":
-            custo = criterios["tempo_medio_inferencia"]
-        else:
-            # k(x)/d normaliza o custo estrutural para [0,1]
-            custo = criterios["numero_atributos"] / self.d
+    def decidir_features_mantidas(self, x):
+        """Eu devolvo os índices cujos genes atingiram o limiar de 0,5."""
+        return np.where(np.asarray(x) >= 0.5)[0]
 
-        out["F"] = [1.0 - f1_intra_medio, 1.0 - f1_cross_medio, custo]
+    def criar_mascara_binaria(self, x):
+        """Eu converto os genes contínuos para a máscara usada nas bases."""
+        mascara = np.zeros(self.d, dtype=int)
+        mascara[self.decidir_features_mantidas(x)] = 1
+        return mascara
 
-        self.historico.append({"mascara": mascara.astype(int).tolist(), **criterios})
+    def _evaluate(self, x, out, *args, **kwargs):
+        # Eu transformo os genes na mesma máscara binária para as duas bases.
+        mascara = self.criar_mascara_binaria(x)
+        numero_selecionadas = int(mascara.sum())
+
+        # Eu penalizo a solução vazia porque nenhum classificador pode ser
+        # treinado sem features. Assim reproduzo a regra do código original.
+        if numero_selecionadas == 0:
+            out["F"] = [1.0, 1.0]
+            self.historico.append({
+                "mascara": mascara.tolist(),
+                "avaliacao_valida": False,
+                "motivo": "nenhuma feature selecionada",
+                "f1_macro_cross_medio": 0.0,
+                "numero_atributos": 0,
+            })
+            return
+
+        # Eu procuro primeiro no cache porque duas soluções contínuas podem
+        # produzir exatamente a mesma máscara após a aplicação do limiar.
+        criterios = self.cache.obter(mascara) if self.cache is not None else None
+        if criterios is None:
+            criterios = avaliar_fase1_cross_dataset(
+                mascara, self.bases_Xy, self.nome_clf, self.seed
+            )
+            if self.cache is not None:
+                # Eu gravo imediatamente para poder retomar uma execução local.
+                self.cache.registrar(mascara, criterios)
+
+        # Eu preservo cada direção no histórico e uso somente a média como
+        # valor agregado do primeiro objetivo.
+        valores_cross = list(criterios["f1_macro_cross_por_direcao"].values())
+        if len(valores_cross) != 2:
+            raise RuntimeError(
+                "Eu esperava exatamente dois valores de F1 cross-dataset."
+            )
+        f1_cross_medio = float(
+            np.mean(valores_cross)
+        )
+
+        # Eu normalizo a quantidade de features como no código fornecido.
+        proporcao_features = numero_selecionadas / self.d
+
+        # Eu entrego ao pymoo os dois objetivos que ele deve minimizar.
+        out["F"] = [1.0 - f1_cross_medio, proporcao_features]
+
+        self.historico.append({
+            "mascara": mascara.tolist(),
+            "avaliacao_valida": True,
+            "f1_macro_cross_medio": f1_cross_medio,
+            **criterios,
+        })
 
 
-def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
-                        pc=0.9, pm=0.05, seed=42, cv_folds=5,
-                        objetivo_custo="k", verbose=True,
+def executar_otimizacao(bases_Xy, nome_clf, n_pop=24, n_gen=15,
+                        seed=42, verbose=True,
                         cache=None, registro_progresso=None):
     """Executa o Algoritmo 1 e retorna o conjunto Pareto P*.
 
@@ -110,25 +129,18 @@ def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
     -------
     dict com:
       mascaras   : matriz binária (n_solucoes x d) das soluções de P*
-      objetivos  : valores (1-F1_intra, 1-F1_cross, custo) de cada solução
+      objetivos  : valores (1-F1_cross_médio, proporção de features)
       historico  : critérios completos de todas as avaliações
     """
     problema = ProblemaSelecaoCaracteristicas(
-        bases_Xy, nome_clf, cv_folds=cv_folds, seed=seed,
-        objetivo_custo=objetivo_custo, cache=cache,
+        bases_Xy, nome_clf, seed=seed, cache=cache,
     )
 
-    # Linhas 2-3: população inicial binária; linhas 9-11: operadores genéticos
-    algoritmo = NSGA2(
-        pop_size=n_pop,
-        sampling=BinaryRandomSampling(),
-        crossover=TwoPointCrossover(prob=pc),
-        mutation=BitflipMutation(prob=pm),
-        eliminate_duplicates=True,
-    )
+    # Eu informo apenas a população e preservo os operadores padrão do NSGA-II.
+    algoritmo = NSGA2(pop_size=n_pop)
 
     # Linhas 4-12: laço de gerações (critério de parada = N_gen)
-    # Fronteira parcial gravada no Drive ao fim de CADA geração; o
+    # Eu gravo a fronteira parcial localmente ao fim de cada geração; o
     # callback só entra nos kwargs quando existe, porque o pymoo invoca
     # o que for passado (None explícito quebraria a chamada interna)
     kwargs_minimize = {}
@@ -145,14 +157,32 @@ def executar_otimizacao(bases_Xy, nome_clf, n_pop=40, n_gen=30,
         **kwargs_minimize,
     )
 
-    # Linhas 13-14: P* = conjunto de soluções não-dominadas
-    mascaras = np.atleast_2d(res.X).astype(int)
-    objetivos = np.atleast_2d(res.F)
+    # Eu converto os genes de Pareto em máscaras usando o mesmo limiar do
+    # problema e removo máscaras repetidas sem definir uma quantidade final.
+    genes = np.atleast_2d(res.X)
+    mascaras_brutas = (genes >= 0.5).astype(int)
+    objetivos_brutos = np.atleast_2d(res.F)
+    indices_unicos = []
+    chaves_vistas = set()
+    for i, mascara in enumerate(mascaras_brutas):
+        chave = tuple(mascara.tolist())
+        if chave not in chaves_vistas:
+            chaves_vistas.add(chave)
+            indices_unicos.append(i)
+    mascaras = mascaras_brutas[indices_unicos]
+    objetivos = objetivos_brutos[indices_unicos]
+
+    # Eu ordeno a saída da solução mais compacta para a menos compacta.
+    ordem = np.lexsort((objetivos[:, 0], objetivos[:, 1]))
+    mascaras = mascaras[ordem]
+    objetivos = objetivos[ordem]
 
     return {
         "mascaras": mascaras,
         "objetivos": objetivos,
         "historico": problema.historico,
-        "nomes_objetivos": ["1 - F1_intra_medio", "1 - F1_cross_medio",
-                            f"custo ({objetivo_custo})"],
+        "nomes_objetivos": [
+            "1 - F1_cross_medio",
+            "proporcao_features_selecionadas",
+        ],
     }

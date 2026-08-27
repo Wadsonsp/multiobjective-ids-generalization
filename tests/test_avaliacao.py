@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Testes do Algoritmo 2 (AvaliarFitness) e da fábrica de classificadores.
+"""Eu testo a avaliação detalhada e a árvore usada no experimento.
 
 O que valido aqui:
 - aplicação correta da máscara binária (linha 1 do pseudocódigo);
@@ -8,7 +8,7 @@ O que valido aqui:
 - cross-dataset registrado POR DIREÇÃO, sem média única (linhas 5-10);
 - custo computacional medido (linhas 11-13);
 - estrutura completa da saída (linhas 14-18);
-- configurações exatas dos 8 classificadores da Seção 5.2.
+- configuração exata da árvore de decisão do problema original.
 """
 
 import numpy as np
@@ -21,11 +21,9 @@ from Modulos.avaliacao import (
     avaliar_intra_dataset,
     numero_de_atributos,
 )
-from Modulos.classificadores import NOMES_VALIDOS, criar_classificador, usa_sample_weight
+from Modulos.classificadores import NOMES_VALIDOS, criar_classificador
 
-# Uso classificadores leves nos testes para a suíte rodar rápido;
-# o XGBoost entra no smoke test de integração.
-CLF_RAPIDO = "lda"
+CLF_RAPIDO = "decision_tree"
 
 
 class TestMascara:
@@ -126,7 +124,7 @@ class TestAvaliarFitnessCompleto:
 
 
 class TestFabricaClassificadores:
-    def test_cria_todos_os_8(self):
+    def test_cria_todos_os_classificadores(self):
         for nome in NOMES_VALIDOS:
             modelo = criar_classificador(nome, seed=42)
             assert modelo is not None
@@ -135,95 +133,12 @@ class TestFabricaClassificadores:
         with pytest.raises(ValueError):
             criar_classificador("svm_que_nao_existe")
 
-    def test_configuracoes_da_secao_5_2(self):
-        # Verifico os hiperparâmetros que reportei no texto da dissertação
-        rf = criar_classificador("random_forest")
-        assert rf.n_estimators == 100 and rf.criterion == "gini"
-        assert rf.max_depth is None and rf.max_features == "sqrt"
+    def test_configuracao_da_arvore_original(self):
+        dt = criar_classificador("decision_tree")
+        assert dt.max_depth == 8 and dt.class_weight == "balanced"
 
-        xgb = criar_classificador("xgboost")
-        assert xgb.learning_rate == 0.3 and xgb.max_depth == 6
-        assert xgb.min_child_weight == 1 and xgb.subsample == 1.0
-
-        lgbm = criar_classificador("lightgbm")
-        assert lgbm.n_estimators == 100 and lgbm.learning_rate == 0.1
-        assert lgbm.num_leaves == 31
-
-        lr = criar_classificador("logistic_regression")
-        assert lr.C == 1.0 and lr.solver == "lbfgs" and lr.max_iter == 100
-
-        knn = criar_classificador("knn")
-        assert knn.n_neighbors == 5 and knn.weights == "uniform" and knn.p == 2
-
-        mlp = criar_classificador("mlp")
-        assert mlp.hidden_layer_sizes == (100,) and mlp.activation == "relu"
-        assert mlp.learning_rate_init == 0.001 and mlp.max_iter == 200
-
-    def test_balanceamento_conforme_secao_4_1(self):
-        # class_weight balanceado em RF, LightGBM e LR; XGBoost via sample_weight
-        assert criar_classificador("random_forest").class_weight == "balanced"
-        assert criar_classificador("lightgbm").class_weight == "balanced"
-        assert criar_classificador("logistic_regression").class_weight == "balanced"
-        assert usa_sample_weight("xgboost") is True
-        assert usa_sample_weight("lda") is False
-
-
-class TestRegressaoClasseRara:
-    """Regressão do erro 'Invalid classes inferred' do XGBoost.
-
-    Cenário real: na amostra das bases NF-v2, classes raras (ex.: Worms,
-    164 fluxos) podem ter menos membros que o número de folds. Quando um
-    fold de treino fica sem a classe, a codificação global deixa um
-    "buraco" na sequência de rótulos e o XGBoost exige 0..n-1 contíguos.
-    A correção recodifica localmente no _treinar e decodifica no _prever.
-    """
-
-    def _bases_com_classe_rara(self):
-        import pandas as pd
-        rng = np.random.RandomState(5)
-        def base(seed, desloc):
-            r = np.random.RandomState(seed)
-            partes = []
-            for i, (classe, n) in enumerate(
-                [("Benign", 200), ("DoS", 200), ("Scanning", 200), ("Worms", 3)]
-            ):
-                f = r.normal(i * 2 + desloc, 0.5, size=(n, 5))
-                df = pd.DataFrame(f, columns=[f"F{j}" for j in range(5)])
-                df["Attack"] = classe
-                partes.append(df)
-            df = pd.concat(partes).sample(frac=1.0, random_state=seed)
-            return df.drop(columns=["Attack"]).reset_index(drop=True), \
-                   df["Attack"].reset_index(drop=True)
-        return {"A": base(1, 0.0), "B": base(2, 0.3)}
-
-    def test_xgboost_com_classe_rara_nao_quebra(self):
-        # Com 3 membros de 'Worms' e 5 folds, há folds de treino sem a
-        # classe - exatamente o cenário que estourava antes da correção
-        bases = self._bases_com_classe_rara()
-        X, _ = bases["A"]
-        mascara = np.ones(X.shape[1], dtype=int)
-        criterios = avaliar_fitness(mascara, bases, "xgboost", cv_folds=5, seed=42)
-        assert 0.0 <= list(criterios["f1_macro_intra"].values())[0] <= 1.0
-        assert len(criterios["f1_macro_cross_por_direcao"]) == 2
-
-    def test_predicoes_voltam_ao_espaco_global(self):
-        # As predições decodificadas precisam indexar as MESMAS classes
-        # da codificação global, senão o F1 compara códigos trocados
-        from Modulos.avaliacao import _prever, _treinar
-        from Modulos.classificadores import criar_classificador
-
-        bases = self._bases_com_classe_rara()
-        X, y = bases["A"]
-        # Treino propositalmente SEM a classe de índice global 0 (Benign)
-        filtro = y != "Benign"
-        classes_globais = np.unique(y)
-        y_cod = np.array([list(classes_globais).index(v) for v in y[filtro]])
-        modelo = criar_classificador("xgboost", seed=42)
-        _treinar(modelo, "xgboost", X[filtro].values, y_cod)
-        y_pred = _prever(modelo, X[filtro].values)
-        # Os códigos previstos devem estar no espaço global (1, 2, 3),
-        # nunca no espaço local contíguo do XGBoost (0, 1, 2)
-        assert set(np.unique(y_pred)).issubset(set(np.unique(y_cod)))
+    def test_balanceamento_fica_no_classificador(self):
+        assert criar_classificador("decision_tree").class_weight == "balanced"
 
 
 class TestDiagnosticoCross:
@@ -252,7 +167,7 @@ class TestDiagnosticoCross:
     def test_diagnostico_presente_na_saida(self, bases_Xy):
         X, _ = bases_Xy["BASE_A"]
         mascara = np.ones(X.shape[1], dtype=int)
-        c = avaliar_fitness(mascara, bases_Xy, "lda", cv_folds=2, seed=42)
+        c = avaliar_fitness(mascara, bases_Xy, CLF_RAPIDO, cv_folds=2, seed=42)
         assert "diagnostico_cross" in c
         for chave in ("BASE_A->BASE_B", "BASE_B->BASE_A"):
             d = c["diagnostico_cross"][chave]
@@ -267,7 +182,7 @@ class TestDiagnosticoCross:
         bases = self._bases_taxonomia_diferente()
         X, _ = bases["A"]
         mascara = np.ones(X.shape[1], dtype=int)
-        _, _, diag = avaliar_cross_dataset(mascara, bases, "lda", seed=42)
+        _, _, diag = avaliar_cross_dataset(mascara, bases, CLF_RAPIDO, seed=42)
         d = diag["A->B"]
         # ~1/3 das amostras de B são Ransomware, ausente em A
         assert d["n_classes_desconhecidas"] > 0
@@ -276,6 +191,6 @@ class TestDiagnosticoCross:
     def test_matriz_soma_total_de_amostras(self, bases_Xy):
         X, _ = bases_Xy["BASE_A"]
         mascara = np.ones(X.shape[1], dtype=int)
-        c = avaliar_fitness(mascara, bases_Xy, "lda", cv_folds=2, seed=42)
+        c = avaliar_fitness(mascara, bases_Xy, CLF_RAPIDO, cv_folds=2, seed=42)
         d = c["diagnostico_cross"]["BASE_A->BASE_B"]
         assert int(np.sum(d["matriz_confusao"])) == d["n_total"]

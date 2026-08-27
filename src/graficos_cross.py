@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Gráficos da análise de generalização cross-dataset (para a dissertação).
+"""Eu gero os gráficos locais da análise de generalização cross-dataset.
 
 Lê os JSONs de avaliação gerados por src/algoritmo2_avaliacao.py (campo
 'diagnostico_cross') e produz quatro figuras que sustentam a discussão
@@ -14,7 +14,7 @@ sobre as DUAS causas da queda de desempenho na transferência:
 4. tradeoff         : dispersão k(x) x F1, mostrando o compromisso
    desempenho/parcimônia ao longo das soluções reavaliadas.
 
-Uso (no Colab, após reavaliar as soluções):
+Uso local, após reavaliar as soluções:
     python src/graficos_cross.py --metricas Resultados/metricas \
         --saida Resultados/figuras
 """
@@ -26,21 +26,23 @@ import os
 
 import numpy as np
 
-# Backend não-interativo: salva PNG sem precisar de display (essencial no Colab)
+# Eu uso um backend não interativo para salvar PNG sem abrir uma janela.
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 
 def carregar_avaliacoes(pasta_metricas):
-    """Lê todos os JSONs de avaliação que contêm diagnóstico cross."""
+    """Eu reúno as avaliações detalhadas salvas pela Fase 2."""
     avaliacoes = []
     for caminho in sorted(glob.glob(os.path.join(pasta_metricas, "avaliacao_*.json"))):
         with open(caminho, "r", encoding="utf-8") as f:
             dados = json.load(f)
-        if "diagnostico_cross" in dados:
-            dados["__arquivo__"] = os.path.basename(caminho)
-            avaliacoes.append(dados)
+        # Eu aceito o formato atual, que agrupa várias soluções por arquivo.
+        for avaliacao in dados.get("avaliacoes", []):
+            if "diagnostico_cross" in avaliacao:
+                avaliacao["__arquivo__"] = os.path.basename(caminho)
+                avaliacoes.append(avaliacao)
     return avaliacoes
 
 

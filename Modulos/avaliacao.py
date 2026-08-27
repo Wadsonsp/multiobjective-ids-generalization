@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Algoritmo 2 - AvaliarFitness(x, D, h) (Figura 6 da dissertação).
+"""Eu implemento a avaliação das máscaras nas duas fases do pipeline.
 
 Implementação fiel ao pseudocódigo, mantendo a numeração das linhas:
 
@@ -19,7 +19,6 @@ diferenças entre desempenho, generalização e custo (Seção 4.3).
 import time
 
 import numpy as np
-from sklearn.base import clone
 from sklearn.metrics import (
     confusion_matrix,
     f1_score,
@@ -27,14 +26,12 @@ from sklearn.metrics import (
     recall_score,
 )
 from sklearn.model_selection import StratifiedKFold
-from sklearn.utils.class_weight import compute_sample_weight
 
-from Modulos.classificadores import criar_classificador, usa_sample_weight
-from Modulos.preprocessamento import ajustar_e_aplicar_minmax
+from Modulos.classificadores import criar_classificador
 
 
 def aplicar_mascara(X, mascara):
-    """Linha 1: aplica a máscara binária x às colunas de atributos."""
+    """Eu aplico a máscara binária x às colunas de atributos."""
     mascara = np.asarray(mascara).astype(bool)
     if mascara.shape[0] != X.shape[1]:
         raise ValueError(
@@ -46,49 +43,23 @@ def aplicar_mascara(X, mascara):
 
 
 def numero_de_atributos(mascara):
-    """k(x) = soma das posições da máscara (Seção 4.2)."""
+    """Eu calculo k(x) somando as posições ligadas da máscara."""
     return int(np.sum(np.asarray(mascara).astype(int)))
 
 
-def _treinar(modelo, nome_clf, X_treino, y_treino):
-    """Fit com sample_weight balanceado quando o classificador exige.
-
-    O XGBoost multiclasse não tem class_weight, então o reequilíbrio da
-    função de perda pela frequência inversa das classes (Seção 4.1) entra
-    aqui via compute_sample_weight('balanced').
-
-    Detalhe importante: o XGBoost exige rótulos CONTÍGUOS 0..n-1 no
-    treino. Como uso codificação global (todas as classes da base) e
-    classes raras (ex.: Worms, 164 fluxos) podem não aparecer em algum
-    fold da CV, a sequência ficaria com "buracos" e o fit estouraria
-    (Invalid classes inferred). Por isso recodifico para o espaço
-    contíguo LOCAL do treino e guardo o mapa inverso, usado por _prever
-    para devolver as predições no espaço global.
-    """
-    y_treino = np.asarray(y_treino)
-    if usa_sample_weight(nome_clf):
-        classes_locais = np.unique(y_treino)
-        mapa = {c: i for i, c in enumerate(classes_locais)}
-        y_local = np.array([mapa[v] for v in y_treino])
-        pesos = compute_sample_weight(class_weight="balanced", y=y_local)
-        modelo.fit(X_treino, y_local, sample_weight=pesos)
-        modelo._classes_globais = classes_locais
-    else:
-        modelo.fit(X_treino, y_treino)
-        modelo._classes_globais = None
+def _treinar(modelo, X_treino, y_treino):
+    """Eu ajusto o classificador com os rótulos codificados da origem."""
+    modelo.fit(X_treino, np.asarray(y_treino))
     return modelo
 
 
 def _prever(modelo, X):
-    """Predict devolvendo os rótulos no espaço de codificação global."""
-    y_pred = modelo.predict(X)
-    if getattr(modelo, "_classes_globais", None) is not None:
-        y_pred = modelo._classes_globais[np.asarray(y_pred, dtype=int)]
-    return y_pred
+    """Eu devolvo as previsões no mesmo espaço numérico do treinamento."""
+    return modelo.predict(X)
 
 
 def _codificar_rotulos(y, classes):
-    """Mapeia rótulos texto -> inteiros, com classes desconhecidas = -1.
+    """Eu mapeio rótulos texto para inteiros e desconhecidos para -1.
 
     No cross-dataset as bases têm categorias diferentes; classes do teste
     ausentes no treino entram como -1 (nunca previstas corretamente),
@@ -99,10 +70,10 @@ def _codificar_rotulos(y, classes):
 
 
 def avaliar_intra_dataset(mascara, X, y, nome_clf, cv_folds=5, seed=42):
-    """Linhas 2-4: CV estratificada em uma base D_i.
+    """Eu executo a validação cruzada estratificada em uma base D_i.
 
-    A normalização Min-Max é ajustada dentro de cada fold de treino
-    (nunca no fold de teste) para impedir vazamento estatístico.
+    Eu preservo os valores originais das features porque a árvore de decisão
+    é invariante à escala e não exige ajuste de normalização.
     """
     X_sel = aplicar_mascara(X, mascara)
     skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=seed)
@@ -115,13 +86,11 @@ def avaliar_intra_dataset(mascara, X, y, nome_clf, cv_folds=5, seed=42):
         X_tr, X_te = X_sel.iloc[idx_treino], X_sel.iloc[idx_teste]
         y_tr, y_te = y.iloc[idx_treino], y.iloc[idx_teste]
 
-        # Min-Max ajustado SÓ no treino do fold (Seção 4.1)
-        X_tr_n, X_te_n, _ = ajustar_e_aplicar_minmax(X_tr, X_te)
-
+        # Eu uso os valores originais porque a árvore é invariante à escala.
         modelo = criar_classificador(nome_clf, seed=seed)
         y_tr_cod = _codificar_rotulos(y_tr, classes)
-        _treinar(modelo, nome_clf, X_tr_n, y_tr_cod)
-        y_pred = _prever(modelo, X_te_n)
+        _treinar(modelo, X_tr, y_tr_cod)
+        y_pred = _prever(modelo, X_te)
         y_te_cod = _codificar_rotulos(y_te, classes)
 
         # Registro das métricas por fold (linha 4)
@@ -145,7 +114,7 @@ def avaliar_intra_dataset(mascara, X, y, nome_clf, cv_folds=5, seed=42):
 
 
 def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
-    """Linhas 5-10: pares direcionais (D_i, D_j), i != j.
+    """Eu avalio todos os pares direcionais (D_i, D_j), com i diferente de j.
 
     Treino em D_i com os atributos selecionados por x, teste em D_j,
     F1-macro registrado por direção (sem reduzir a média única - a
@@ -167,18 +136,16 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
             X_tr = aplicar_mascara(X_i, mascara)
             X_te = aplicar_mascara(X_j, mascara)
 
-            # Min-Max ajustado na base de treino e aplicado na de teste
-            X_tr_n, X_te_n, _ = ajustar_e_aplicar_minmax(X_tr, X_te)
-
+            # Eu uso exatamente as features selecionadas, sem reescalonar.
             classes_treino = np.unique(y_i)
             modelo = criar_classificador(nome_clf, seed=seed)
-            _treinar(modelo, nome_clf, X_tr_n, _codificar_rotulos(y_i, classes_treino))
+            _treinar(modelo, X_tr, _codificar_rotulos(y_i, classes_treino))
 
             # Tempo médio de inferência POR AMOSTRA (linha 12)
             inicio = time.perf_counter()
-            y_pred = _prever(modelo, X_te_n)
+            y_pred = _prever(modelo, X_te)
             duracao = time.perf_counter() - inicio
-            tempos_inferencia.append(duracao / max(len(X_te_n), 1))
+            tempos_inferencia.append(duracao / max(len(X_te), 1))
 
             y_te_cod = _codificar_rotulos(y_j, classes_treino)
             f1 = f1_score(y_te_cod, y_pred, average="macro", zero_division=0)
@@ -242,7 +209,7 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
 
 
 def avaliar_fitness(mascara, bases_Xy, nome_clf, cv_folds=5, seed=42):
-    """Algoritmo 2 completo: retorna os critérios de avaliação de x.
+    """Eu retorno todos os critérios detalhados da Fase 2 para a máscara x.
 
     Parameters
     ----------
@@ -268,6 +235,25 @@ def avaliar_fitness(mascara, bases_Xy, nome_clf, cv_folds=5, seed=42):
     return {
         "f1_macro_intra": {nome: r["f1_macro"] for nome, r in intra.items()},
         "detalhes_intra": intra,
+        "f1_macro_cross_por_direcao": cross,
+        "diagnostico_cross": diagnostico,
+        "tempo_medio_inferencia": tempo_medio,
+        "numero_atributos": numero_de_atributos(mascara),
+    }
+
+
+def avaliar_fase1_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
+    """Eu calculo somente os critérios necessários ao pré-filtro NSGA-II.
+
+    Na Fase 1, eu treino na primeira base e testo na segunda; depois faço o
+    caminho inverso. Eu não executo a validação cruzada intra-dataset para
+    cada indivíduo porque ela não faz parte dos dois objetivos definidos.
+    A avaliação detalhada, incluindo CV intra-dataset, permanece na Fase 2.
+    """
+    cross, tempo_medio, diagnostico = avaliar_cross_dataset(
+        mascara, bases_Xy, nome_clf, seed
+    )
+    return {
         "f1_macro_cross_por_direcao": cross,
         "diagnostico_cross": diagnostico,
         "tempo_medio_inferencia": tempo_medio,

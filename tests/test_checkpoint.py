@@ -19,8 +19,8 @@ import pytest
 import Modulos.otimizacao as otm
 from Modulos.checkpoint import CacheAvaliacoes, RegistroProgresso, chave_da_mascara
 
-CONTEXTO = {"classificador": "lda", "seed": 42}
-CLF_RAPIDO = "lda"
+CONTEXTO = {"classificador": "decision_tree", "seed": 42}
+CLF_RAPIDO = "decision_tree"
 
 
 class TestCacheAvaliacoes:
@@ -32,7 +32,7 @@ class TestCacheAvaliacoes:
         assert cache.obter(np.array([0, 1, 1])) is None
 
     def test_sobrevive_a_nova_sessao(self, tmp_path):
-        # Simulo a queda do Colab: outro objeto, mesmo arquivo no "Drive"
+        # Eu simulo uma nova execução: outro objeto, mesmo arquivo local.
         caminho = str(tmp_path / "c.jsonl")
         CacheAvaliacoes(caminho, CONTEXTO).registrar([1, 1, 0], {"f1": 0.8})
         cache2 = CacheAvaliacoes(caminho, CONTEXTO)
@@ -55,7 +55,7 @@ class TestCacheAvaliacoes:
         caminho = str(tmp_path / "c.jsonl")
         CacheAvaliacoes(caminho, CONTEXTO)
         with pytest.raises(ValueError, match="OUTRO contexto"):
-            CacheAvaliacoes(caminho, {"classificador": "xgboost", "seed": 42})
+            CacheAvaliacoes(caminho, {"classificador": "outro", "seed": 42})
 
     def test_chave_canonica(self):
         assert chave_da_mascara([1, 0, 1, 1]) == "1011"
@@ -71,18 +71,18 @@ class TestRetomadaExecucao:
         completa deve fazer ZERO avaliações novas e devolver o mesmo P*."""
         caminho = str(tmp_path / "cache.jsonl")
         chamadas = {"n": 0}
-        original = otm.avaliar_fitness
+        original = otm.avaliar_fase1_cross_dataset
 
         def avaliar_contando(*args, **kwargs):
             chamadas["n"] += 1
             return original(*args, **kwargs)
 
-        monkeypatch.setattr(otm, "avaliar_fitness", avaliar_contando)
+        monkeypatch.setattr(otm, "avaliar_fase1_cross_dataset", avaliar_contando)
 
         cache1 = CacheAvaliacoes(caminho, CONTEXTO)
         r1 = otm.executar_otimizacao(
             bases_Xy, CLF_RAPIDO, n_pop=6, n_gen=2, seed=42,
-            cv_folds=2, verbose=False, cache=cache1,
+            verbose=False, cache=cache1,
         )
         n_primeira = chamadas["n"]
         assert n_primeira > 0
@@ -93,7 +93,7 @@ class TestRetomadaExecucao:
         cache2 = CacheAvaliacoes(caminho, CONTEXTO)
         r2 = otm.executar_otimizacao(
             bases_Xy, CLF_RAPIDO, n_pop=6, n_gen=2, seed=42,
-            cv_folds=2, verbose=False, cache=cache2,
+            verbose=False, cache=cache2,
         )
         assert chamadas["n"] == 0, "retomada recomputou avaliações do cache"
         assert np.array_equal(r1["mascaras"], r2["mascaras"])
@@ -104,7 +104,7 @@ class TestRegistroProgresso:
     class _OptFake:
         def get(self, campo):
             return {"X": np.array([[1, 0], [0, 1]]),
-                    "F": np.array([[0.1, 0.2, 0.3], [0.2, 0.1, 0.4]])}[campo]
+                    "F": np.array([[0.1, 0.2], [0.2, 0.1]])}[campo]
 
     class _AlgoritmoFake:
         n_gen = 7
@@ -133,7 +133,7 @@ class TestRegistroProgresso:
         # Progresso gravado durante uma execução real do pymoo
         caminho = str(tmp_path / "progresso.json")
         otm.executar_otimizacao(
-            bases_Xy, CLF_RAPIDO, n_pop=6, n_gen=3, seed=42, cv_folds=2,
+            bases_Xy, CLF_RAPIDO, n_pop=6, n_gen=3, seed=42,
             verbose=False, registro_progresso=RegistroProgresso(caminho),
         )
         with open(caminho, encoding="utf-8") as f:

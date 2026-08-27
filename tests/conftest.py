@@ -4,7 +4,7 @@
 Crio duas "bases" pequenas e separáveis (papel do NF-UNSW-NB15-v2 e do
 NF-ToN-IoT-v2) com as mesmas colunas, incluindo os identificadores que
 o pré-processamento precisa descartar (IPs, portas, TTL). Assim os
-testes exercitam o pipeline completo sem depender dos CSVs reais.
+testes exercitam o pipeline completo sem carregar os Parquets reais.
 """
 
 import numpy as np
@@ -23,7 +23,6 @@ CONFIG_PRE_TESTE = {
     ],
     "coluna_rotulo": "Attack",
     "coluna_binaria": "Label",
-    "imputacao": False,
 }
 
 

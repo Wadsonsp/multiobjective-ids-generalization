@@ -4,3 +4,11 @@ __pycache__/
 .coverage
 .coverage.*
 htmlcov/
+.pytest_cache/
+Resultados/checkpoints/
+Resultados/figuras/
+Resultados/pareto/*.json
+Resultados/metricas/*.json
+Resultados/logs/*
+!Resultados/logs/.gitkeep
+Datasets/*.parquet

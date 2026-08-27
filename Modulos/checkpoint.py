@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
-"""Checkpoint dos experimentos: cache de avaliações e progresso por geração.
+"""Eu mantenho o cache de avaliações e o progresso por geração.
 
-Motivação: o Colab pode derrubar a sessão no meio de uma execução longa
-do NSGA-II. Como cada avaliação de fitness é cara (CV + cross-dataset),
-não posso perder o que já foi computado.
+Como cada avaliação cross-dataset completa é cara, eu gravo os resultados
+localmente para poder reiniciar o programa sem perder os modelos já avaliados.
 
 Estratégia de retomada:
 1. CACHE DE AVALIAÇÕES (CacheAvaliacoes): cada critério calculado pelo
-   Algoritmo 2 é gravado IMEDIATAMENTE em um arquivo .jsonl no Drive
+   Algoritmo 2 é gravado IMEDIATAMENTE em um arquivo .jsonl local
    (append + flush, uma avaliação por linha). Como o NSGA-II com seed
    fixa é determinístico, ao reexecutar a mesma configuração a sequência
    de máscaras se repete: as avaliações já gravadas viram cache hit
    instantâneo e a execução "reencena" em segundos até o ponto da falha,
    continuando de lá. Retomar = rodar o mesmo comando de novo.
 2. PROGRESSO POR GERAÇÃO (RegistroProgresso): ao fim de cada geração,
-   gravo a fronteira parcial (máscaras + objetivos) em JSON no Drive.
+   gravo a fronteira parcial (máscaras + objetivos) em JSON local.
    Mesmo que eu nunca retome, sempre existe um Pareto parcial utilizável
    do ponto exato em que a sessão caiu.
 
 O cache só é válido para o MESMO contexto experimental (classificador,
-amostra, folds, bases, seed): misturar contextos corromperia os
+bases, formulação e seed): misturar contextos corromperia os
 resultados em silêncio. Por isso o arquivo carrega um cabeçalho de
 contexto e o carregamento falha alto se houver divergência.
 """
@@ -78,8 +77,7 @@ class CacheAvaliacoes:
                     "O cache em "
                     f"{self.caminho} pertence a OUTRO contexto experimental.\n"
                     f"  cache : {meta}\n  atual : {self.contexto}\n"
-                    "Use um arquivo de cache por configuração (ex.: inclua "
-                    "classificador e tamanho da amostra no nome do arquivo)."
+                    "Use um arquivo de cache por configuração e classificador."
                 )
             for linha in f:
                 try:
@@ -95,7 +93,7 @@ class CacheAvaliacoes:
     def registrar(self, mascara, criterios):
         """Grava a avaliação em memória E em disco imediatamente.
 
-        O flush + fsync garante que a linha chegue ao Drive antes de a
+        O flush + fsync garante que a linha chegue ao disco antes de a
         próxima avaliação começar: se a sessão cair, perde-se no máximo
         a avaliação em andamento.
         """
@@ -132,7 +130,11 @@ class RegistroProgresso:
         estado = {
             "geracao": int(algorithm.n_gen),
             "avaliacoes": int(algorithm.evaluator.n_eval),
-            "mascaras_parciais": np.atleast_2d(opt.get("X")).astype(int).tolist(),
+            # Eu aplico o mesmo limiar usado pela classe do problema; converter
+            # os genes diretamente para int transformaria quase tudo em zero.
+            "mascaras_parciais": (
+                np.atleast_2d(opt.get("X")) >= 0.5
+            ).astype(int).tolist(),
             "objetivos_parciais": np.atleast_2d(opt.get("F")).tolist(),
         }
         # Escrita atômica: gravo em arquivo temporário e renomeio, para a
