@@ -12,3 +12,5 @@ Resultados/metricas/*.json
 Resultados/logs/*
 !Resultados/logs/.gitkeep
 Datasets/*.parquet
+
+Resultados/metricas/pareto_*/

@@ -1,0 +1,7 @@
+[Unit]
+Description=Atualizar relatorio IDS com diagnostico de convergencia
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/multiobjective-ids-generalization
+ExecStart=%h/multiobjective-ids-generalization/.venv/bin/python src/relatorio_orientadores.py --pareto Resultados/pareto/pareto_20260907_000921_decision_tree.json --saida Resultados/figuras/orientadores_final --metricas Resultados/metricas/pareto_20260907_000921_decision_tree

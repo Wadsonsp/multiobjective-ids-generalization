@@ -100,6 +100,8 @@ def main():
     parser.add_argument("--todas", action="store_true",
                         help="avalia todas as soluções do arquivo Pareto")
     parser.add_argument("--classificador", default=None)
+    parser.add_argument("--saida", default=None,
+                        help="JSON de saída explícito; gravado atomicamente")
     args = parser.parse_args()
 
     config = carregar_config(args.config)
@@ -142,12 +144,18 @@ def main():
     pasta = resolver_caminho_local(config["resultados"]["pasta_metricas"])
     os.makedirs(pasta, exist_ok=True)
     rotulo = time.strftime("%Y%m%d_%H%M%S") + f"_{nome_clf}"
-    caminho = os.path.join(pasta, f"avaliacao_{rotulo}.json")
-    with open(caminho, "w", encoding="utf-8") as f:
+    caminho = resolver_caminho_local(args.saida) if args.saida else os.path.join(
+        pasta, f"avaliacao_{rotulo}.json")
+    os.makedirs(os.path.dirname(os.path.abspath(caminho)), exist_ok=True)
+    temporario = caminho + ".tmp"
+    with open(temporario, "w", encoding="utf-8") as f:
         json.dump(
             {
                 "fase": "Fase 2 - avaliacao detalhada",
                 "classificador": nome_clf,
+                "configuracao": {"seed": seed, "cv_folds": config["avaliacao"]["cv_folds"],
+                                 "dados_completos": True},
+                "pareto_origem": os.path.abspath(args.pareto) if args.pareto else None,
                 "atributos": ordem,
                 "avaliacoes": avaliacoes,
             },
@@ -155,6 +163,9 @@ def main():
             ensure_ascii=False,
             indent=2,
         )
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temporario, caminho)
     print(f"\n[salvo] {caminho}")
 
 

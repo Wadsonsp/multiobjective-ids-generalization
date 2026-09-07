@@ -102,3 +102,118 @@ datasets usados na execução científica.
 
 Sarhan, Layeghy e Portmann, *Towards a Standard Feature Set for Network
 Intrusion Detection System Datasets*, Mobile Networks and Applications, 2022.
+
+## Execução independente da sessão
+
+O serviço `ids-otimizacao.service` executa a Fase 1 com a configuração de
+`src/config.yaml`, reutiliza os checkpoints e reinicia após falhas em 60 segundos.
+Após conclusão normal, grava `Resultados/checkpoints/otimizacao.concluida` e
+não repete o experimento, inclusive após reiniciar o computador.
+
+Instalação para o usuário atual (projeto em `~/multiobjective-ids-generalization`):
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp deploy/systemd/ids-otimizacao.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+loginctl enable-linger "$USER"
+systemctl --user enable --now ids-otimizacao.service
+```
+
+O `enable-linger` mantém o gerenciador do usuário após logout e permite iniciar
+no boot sem login; dependendo da máquina, exige autorização administrativa.
+Nenhum processo continua executando com a máquina desligada. O serviço retoma
+quando ela volta, reaproveitando as avaliações salvas no cache.
+
+Acompanhamento e parada:
+
+```bash
+systemctl --user status ids-otimizacao.service
+tail -f Resultados/logs/nsga2.log
+systemctl --user stop ids-otimizacao.service
+```
+
+Para desativar também a inicialização automática:
+
+```bash
+systemctl --user disable --now ids-otimizacao.service
+```
+
+Uma conclusão bem-sucedida deixa o serviço inativo, com código de saída zero.
+Para repetir intencionalmente uma execução concluída, remova apenas o marcador
+`Resultados/checkpoints/otimizacao.concluida` e inicie o serviço novamente.
+O script usa um lock para impedir execuções simultâneas iniciadas por ele;
+não rode o Python diretamente enquanto o serviço estiver executando.
+
+Como alternativa manual, com o serviço desativado:
+
+```bash
+nohup bash src/executar_otimizacao.sh >> Resultados/logs/nsga2.log 2>&1 < /dev/null &
+```
+
+O `nohup` protege contra desconexão do terminal, mas não fornece reinício
+automático após falha ou reboot.
+
+## Material para os orientadores
+
+O relatório do checkpoint atual é gerado sem repetir treinamentos:
+
+```bash
+.venv/bin/python src/relatorio_orientadores.py
+```
+
+Abra `Resultados/figuras/orientadores_parcial/index.html` ou o
+`relatorio_graficos.pdf` nessa pasta. O ZIP ao lado inclui figuras PNG/PDF,
+tabela CSV e uma cópia dos dados utilizados. O pacote parcial identifica
+explicitamente a geração registrada e não mistura o Pareto do teste antigo.
+
+A continuação automática aguarda o marcador de conclusão da Fase 1, gera os
+gráficos finais de Pareto, avalia cada solução e a máscara completa com cinco
+folds nos datasets completos, e acrescenta a comparação intra/cross ao pacote
+`Resultados/figuras/orientadores_final`. Cada solução detalhada concluída é
+salva atomicamente e reutilizada após uma interrupção. A solução interrompida
+é recalculada; a retomada da Fase 2 ocorre por solução, não por fold.
+
+```bash
+cp deploy/systemd/ids-analise.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now ids-analise.service
+tail -f Resultados/logs/analise.log
+```
+
+Para parar a avaliação e a geração automática:
+
+```bash
+systemctl --user disable --now ids-analise.service
+```
+
+A otimização usa o serviço separado `ids-otimizacao.service`. As avaliações
+ficam em `Resultados/metricas/pareto_<execucao>/`; o marcador
+`analise.concluida` nessa pasta indica que todas as soluções, o baseline e os
+gráficos foram finalizados. Enquanto isso, o pacote final pode conter apenas
+as avaliações detalhadas já concluídas.
+
+### Convergência do NSGA-II
+
+O pacote inclui `00_convergencia_hipervolume.png` (e PDF), uma página de
+diagnóstico no relatório e `convergencia_nsga2.csv`. O hipervolume é calculado
+sobre a fronteira sobrevivente de cada geração, com referência fixa `(1.1, 1.1)`
+e os objetivos originais `1 - F1_cross_medio` e `k/d`, ambos em `[0,1]`.
+Não há normalização por geração nem uso de um arquivo acumulado de soluções.
+
+As gerações são reconstruídas com a mesma seed, população e operadores,
+consultando somente uma cópia em memória do cache. Não há leitura dos Parquets,
+retreinamento ou escrita nos checkpoints. Máscaras ausentes interrompem o
+procedimento; a fronteira reconstruída precisa coincidir com a salva antes
+que a curva seja publicada. A reconstrução não usa a posição da linha do cache
+como se fosse o número da geração.
+
+O diagnóstico mostra progresso nos objetivos; não certifica ótimo global,
+estabilidade entre seeds ou generalização independente. O ponto de referência
+é mantido fixo em todas as gerações. Base metodológica:
+https://pymoo.org/getting_started/part_4.html
+
+Para a análise já em execução, `ids-relatorio.path` observa o marcador de
+conclusão da avaliação de 20260907_000921 e atualiza o pacote final com o
+baseline, sem interromper o treinamento em curso. As próximas execuções do
+gerador já incluem o diagnóstico diretamente.

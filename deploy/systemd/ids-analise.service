@@ -1,0 +1,20 @@
+[Unit]
+Description=IDS - avaliacao detalhada e graficos para orientacao
+StartLimitIntervalSec=0
+Wants=ids-otimizacao.service
+After=ids-otimizacao.service
+
+[Service]
+Type=exec
+WorkingDirectory=%h/multiobjective-ids-generalization
+ExecStart=%h/multiobjective-ids-generalization/.venv/bin/python -u src/continuar_analise.py
+Restart=on-failure
+RestartSec=60
+KillMode=control-group
+TimeoutStopSec=30
+Environment=MPLBACKEND=Agg
+StandardOutput=append:%h/multiobjective-ids-generalization/Resultados/logs/analise.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

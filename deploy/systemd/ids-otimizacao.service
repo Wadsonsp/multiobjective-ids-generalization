@@ -1,0 +1,19 @@
+[Unit]
+Description=Experimento IDS - otimizacao NSGA-II com checkpoint
+StartLimitIntervalSec=0
+ConditionPathExists=!%h/multiobjective-ids-generalization/Resultados/checkpoints/otimizacao.concluida
+
+[Service]
+Type=exec
+WorkingDirectory=%h/multiobjective-ids-generalization
+ExecStart=/bin/bash %h/multiobjective-ids-generalization/src/executar_otimizacao.sh
+Restart=on-failure
+RestartSec=60
+RestartPreventExitStatus=75
+KillMode=control-group
+TimeoutStopSec=30
+StandardOutput=append:%h/multiobjective-ids-generalization/Resultados/logs/nsga2.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

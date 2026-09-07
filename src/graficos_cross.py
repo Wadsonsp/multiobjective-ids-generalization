@@ -72,7 +72,7 @@ def plot_matriz_confusao(diag, direcao, caminho_saida):
     ax.set_yticks(range(len(classes_teste)))
     ax.set_xticklabels(rotulos_col, rotation=45, ha="right", fontsize=8)
     ax.set_yticklabels(classes_teste, fontsize=8)
-    ax.set_xlabel("Classe prevista (vocabulário da origem)")
+    ax.set_xlabel("Classe prevista (rótulos do destino; demais agrupados)")
     ax.set_ylabel("Classe verdadeira (base de destino)")
     ax.set_title(f"Matriz de confusão cross-dataset\n{direcao}", fontsize=10)
 
@@ -84,7 +84,7 @@ def plot_matriz_confusao(diag, direcao, caminho_saida):
                 ax.text(j, i, f"{v:.2f}", ha="center", va="center",
                         color="white" if v > 0.5 else "black", fontsize=7)
 
-    fig.colorbar(im, ax=ax, label="Proporção (recall por classe)")
+    fig.colorbar(im, ax=ax, label="Proporção por classe verdadeira")
     fig.tight_layout()
     fig.savefig(caminho_saida, dpi=150)
     plt.close(fig)
@@ -129,9 +129,10 @@ def plot_decomposicao(avaliacoes, caminho_saida):
     Para cada direção, decomponho o que "falta" para o desempenho perfeito:
     - parcela de incompatibilidade de taxonomia = proporção de amostras de
       classes que a origem nunca viu (limite estrutural, inevitável);
-    - parcela atribuível a domain shift = erro restante nas classes
-      conhecidas (o modelo poderia ter acertado, mas a distribuição mudou).
-    Isso separa a queda "inevitável" da queda "de modelo".
+    - parcela de erro nas classes
+      conhecidas (sem atribuição causal).
+    Esta partição descreve o erro de classificação, não o déficit de F1.
+    Ela não isola causalmente o efeito de domain shift.
     """
     direcoes, taxonomia, shift = [], [], []
     for a in avaliacoes:
@@ -152,13 +153,13 @@ def plot_decomposicao(avaliacoes, caminho_saida):
     b1 = ax.bar(x, taxonomia, 0.55, label="Incompatibilidade de taxonomia\n(classe ausente no treino)",
                 color="#8064A2")
     ax.bar(x, shift, 0.55, bottom=taxonomia,
-           label="Domain shift\n(erro em classe conhecida)", color="#C0504D")
+           label="Erro em classes conhecidas", color="#C0504D")
 
     ax.set_xticks(x)
     ax.set_xticklabels(direcoes, fontsize=8)
     ax.set_ylabel("Fração das amostras de teste")
     ax.set_ylim(0, 1)
-    ax.set_title("Decomposição da queda cross-dataset por causa")
+    ax.set_title("Erro cross-dataset por grupo de classes")
     ax.legend(fontsize=8, loc="upper right")
     fig.tight_layout()
     fig.savefig(caminho_saida, dpi=150)

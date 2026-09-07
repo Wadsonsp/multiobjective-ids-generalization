@@ -1,0 +1,9 @@
+[Unit]
+Description=Atualizar diagnostico ao concluir a avaliacao IDS atual
+
+[Path]
+PathChanged=%h/multiobjective-ids-generalization/Resultados/metricas/pareto_20260907_000921_decision_tree/analise.concluida
+Unit=ids-relatorio.service
+
+[Install]
+WantedBy=default.target
