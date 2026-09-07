@@ -218,6 +218,57 @@ Eu considero esse parágrafo uma proposta de redação baseada nos registros
 atuais. Antes de incorporá-lo à dissertação, vou ajustá-lo aos resultados finais
 e à discussão com meus orientadores.
 
+## Entrada 002 — 07/09/2026: como interpretei o log do algoritmo
+
+Às 17h24, eu confirmei duas gerações concluídas, 56 máscaras únicas salvas e
+nenhum reinício por falha. Eu esclareci que a linha do log é atualizada por
+geração concluída, enquanto o cache recebe avaliações durante a geração.
+
+Eu consultei as classes de exibição e de variação dos objetivos no pymoo 0.6.2
+instalado e documentei `n_gen`, `n_eval`, `n_nds`, `eps` e `indicator` no
+[README](../README.md). Eu distingui o número de indivíduos das máscaras únicas
+e a mudança indicada por `eps` do hipervolume. Eu também registrei que
+`ideal`, `nadir` e `f` seguem uma prioridade de exibição e que a tolerância
+interna da tabela não substitui meu critério de parada de 15 gerações.
+
+Eu não alterei parâmetros nem reiniciei a execução ao acrescentar essa
+explicação. Eu usei essa leitura para tornar o acompanhamento compreensível
+sem afirmar convergência ou melhoria percentual a partir de `eps`.
+
+## Entrada 003 — 07/09/2026: como distingui os mecanismos e a penalização
+
+Eu investiguei se a penalização estava sendo utilizada nos experimentos.
+Eu conferi o código de pré-processamento, classificação, avaliação e otimização,
+além da configuração de três bases. Eu registrei a explicação completa na
+[metodologia atual](experimento_tres_datasets.md#como-aplico-os-mecanismos-da-metodologia-atual).
+
+Eu confirmei a penalização explícita da máscara sem atributos: eu atribuo
+`[1, 1]` aos objetivos e não treino o classificador. Para máscaras não vazias,
+eu minimizo `1 - média dos seis F1 macro` e `k/37`. Eu esclareci que a quantidade
+de atributos é um objetivo separado, sem coeficiente adicional somado ao F1.
+Eu não alterei essa formulação durante a execução.
+
+Eu distingui a limpeza de registros inválidos, a exclusão e o alinhamento dos
+atributos, a normalização textual dos rótulos e o uso de `float32` da penalização
+na busca. Eu também registrei que trato o desbalanceamento com pesos de classe
+na árvore, sem subamostrar as bases.
+
+Eu verifiquei que as classes ausentes na origem recebem o código `-1` no teste.
+Eu reconheci que esse agrupamento afeta o F1 e não equivale a avaliar cada
+categoria desconhecida separadamente. Eu não o interpreto como uma penalização
+extra nem como reconhecimento aprendido de classes desconhecidas.
+
+Eu confirmei a existência da regra para máscaras vazias, mas não medi sua
+frequência: essas máscaras retornam antes da gravação no cache. Eu não deduzo
+sua ausência na busca a partir da ausência no cache. Eu também não atribuo
+benefícios empíricos a cada mecanismo sem experimentos comparativos.
+
+Eu mantenho como próximo passo examinar as seis direções, os diagnósticos de
+taxonomia, o baseline e a evolução do hipervolume quando os resultados estiverem
+disponíveis. Eu acrescentei documentação sem modificar o código ou reiniciar
+o serviço. Eu uso como referência de implementação o commit `b5ae8ed` e a
+configuração `src/config_tres_datasets.yaml`.
+
 ## Como vou acrescentar minhas próximas entradas
 
 Eu vou registrar mudanças de dataset, métrica, taxonomia, seed, população,

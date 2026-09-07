@@ -15,6 +15,15 @@ prova de convergência. Eu preservo fotografias datadas da execução em
 [docs/registros](docs/registros/), distinguindo acompanhamento parcial de
 resultados concluídos.
 
+## Onde explico os mecanismos da minha metodologia
+
+Eu descrevo a limpeza e o alinhamento dos datasets, os pesos de classe no
+treinamento, os dois objetivos do NSGA-II e a penalização `[1, 1]` para máscaras
+sem atributos na [metodologia atual](docs/experimento_tres_datasets.md#como-aplico-os-mecanismos-da-metodologia-atual).
+Eu também explico como agrupo classes desconhecidas em `-1` no cálculo do F1
+e quais limitações reconheço. Eu registrei essa verificação na entrada 003 do
+[meu diário](docs/diario_de_pesquisa.md).
+
 ## O que pretendo ampliar agora
 
 Eu pretendo passar de dois para três datasets, incluindo o
@@ -77,6 +86,82 @@ pipeline. Eu não inicio os scripts individuais em paralelo ao serviço.
 Eu preservo as contagens após limpeza em
 `Resultados/tres_datasets_v1/checkpoints/dados_preprocessamento.json` e consulto
 os relatórios em `Resultados/tres_datasets_v1/figuras/` quando forem produzidos.
+
+## Como interpreto a tabela de acompanhamento do NSGA-II
+
+Eu acompanho a tabela no log da execução. Cada linha registra uma geração
+concluída; durante o cálculo da geração seguinte, posso continuar vendo a
+última linha sem que isso signifique uma interrupção.
+
+```text
+n_gen  |  n_eval  | n_nds  |      eps      |   indicator
+     1 |       24 |      3 |             - |             -
+     2 |       48 |      5 |  0.3944093989 |         ideal
+```
+
+| Coluna que acompanho | Como eu a interpreto |
+|---|---|
+| `n_gen` | Eu leio o número da geração concluída. Nesta rodada, configurei 15 gerações; a primeira corresponde à avaliação da população inicial. |
+| `n_eval` | Eu leio o total acumulado de indivíduos avaliados pelo algoritmo. Não interpreto esse número como quantidade de linhas dos datasets nem de treinamentos novos: uma máscara repetida pode recuperar critérios do cache. |
+| `n_nds` | Eu leio a quantidade de indivíduos não dominados no conjunto corrente `algorithm.opt`. Eu considero não dominado um indivíduo quando nenhum outro do conjunto comparado é pelo menos tão bom nos dois objetivos e estritamente melhor em um deles. Não interpreto esse conjunto como a fronteira ótima global conhecida. |
+| `eps` | Eu acompanho uma medida de mudança entre gerações no espaço dos objetivos, conforme o componente identificado em `indicator`. Eu não a interpreto como F1, hipervolume, erro de classificação ou porcentagem de melhoria. |
+| `indicator` | Eu identifico qual componente originou o `eps` mostrado: `ideal`, `nadir` ou `f`. |
+
+### Como distingo os valores de `indicator`
+
+- **`ideal`:** eu acompanho a mudança normalizada dos melhores valores de cada
+  objetivo no conjunto corrente. Esses melhores valores podem pertencer a
+  soluções diferentes; eu não suponho que uma única solução alcance todos eles.
+- **`nadir`:** eu acompanho a mudança normalizada dos maiores valores de cada
+  objetivo no conjunto não dominado corrente. Eu trato esse ponto como a
+  estimativa corrente usada pelo pymoo, não como o nadir exato de uma fronteira
+  ótima conhecida.
+- **`f`:** eu acompanho uma distância entre as fronteiras de gerações sucessivas,
+  calculada por IGD após a normalização interna. Eu não confundo esse cálculo
+  entre gerações com IGD em relação a uma fronteira ótima verdadeira.
+- **`-`:** eu reconheço que ainda não há comparação disponível, como na primeira
+  geração, quando não existe uma geração anterior para essa medida.
+
+Eu conferi essa explicação na implementação local do **pymoo 0.6.2**, nas
+classes `MultiObjectiveOutput`, `NumberOfNondominatedSolutions` e
+`MultiObjectiveSpaceTermination`. Nessa implementação, eu observo que a exibição
+prioriza `ideal` quando sua mudança supera a tolerância padrão `0.0025`;
+caso contrário, verifica `nadir` e, por último, apresenta `f`. Eu não interpreto
+`indicator` como uma escolha obrigatória do maior entre os três valores.
+
+Eu observo que valores pequenos de `eps` indicam pequena mudança no componente
+mostrado, mas não comprovam ótimo global ou convergência definitiva. Como o
+componente pode mudar, eu não leio a sequência de `eps` como uma única métrica
+homogênea. Na minha execução, eu uso **15 gerações como critério de parada**;
+a tolerância usada para exibir essa tabela não encerra automaticamente a busca.
+Eu examino separadamente a curva de hipervolume para complementar o diagnóstico.
+
+### Como relaciono indivíduos, máscaras e checkpoints
+
+Eu uso genes reais e aplico o limiar `0.5` para obter máscaras binárias.
+Assim, indivíduos distintos podem selecionar os mesmos atributos. Por isso,
+eu não equiparo `n_nds` à quantidade de máscaras únicas que salvo no Pareto
+final. Também não interpreto mais indivíduos não dominados como melhoria
+obrigatória: uma nova solução pode dominar várias anteriores.
+
+Eu gravo cada avaliação nova concluída no cache, enquanto a linha da tabela
+só aparece ao concluir a geração. Assim, posso ter 56 máscaras únicas salvas
+mesmo quando a última linha mostra `n_eval=48`. Eu uso o serviço, o log e os
+checkpoints em conjunto para acompanhar o trabalho.
+
+### O que observei em 07/09/2026 às 17h24
+
+Eu confirmei o serviço ativo, sem reinícios por falha, **duas de 15 gerações
+concluídas** e a terceira em andamento. Eu contei **56 avaliações únicas salvas**,
+com última gravação às **17h15**. Eu registro esses valores como uma fotografia
+datada; eles não representam o estado atual permanente do projeto.
+
+Na segunda linha do exemplo, eu interpreto `2 | 48 | 5 | 0.3944093989 | ideal`
+como a conclusão da geração 2, com 48 indivíduos avaliados desde o início,
+cinco indivíduos não dominados e mudança normalizada do ponto ideal. Eu não
+interpreto `0.3944093989` como uma melhoria de 39,44% no desempenho do detector.
+Eu ainda não concluí a otimização, a avaliação detalhada ou o baseline desta
+rodada com três bases na data dessa observação.
 
 ## Resultados disponíveis no repositório
 

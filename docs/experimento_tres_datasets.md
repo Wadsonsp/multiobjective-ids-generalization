@@ -156,6 +156,103 @@ dos códigos observados e previstos. Isso não equivale ao macro-F1 separado de
 cada categoria desconhecida original. Se eu investigar outra definição ou uma
 taxonomia harmonizada, vou tratá-la como outro protocolo e outro cache.
 
+## Como aplico os mecanismos da metodologia atual
+
+Eu registrei esta explicação em 07/09/2026 após conferir a implementação de
+`tres_datasets_v1`. Eu complemento o plano original com as regras já aplicadas,
+sem alterar os parâmetros da execução.
+
+### Como preparo os dados e trato o desbalanceamento
+
+Eu removo linhas com valores ausentes, infinitos ou números fora do intervalo
+finito de `float32`, antes de descartar colunas. Eu não imputo valores nem faço
+subamostragem. Eu interpreto essa operação como limpeza, e não como penalização
+na função objetivo. Eu preservo as contagens por base na tabela deste protocolo.
+
+Eu retiro `L4_SRC_PORT`, `L4_DST_PORT`, `MIN_TTL` e `MAX_TTL` conforme a
+configuração, procurando reduzir atalhos específicos das redes. Eu também
+retiro `Attack` e `Label` dos atributos para não fornecer a resposta ao modelo.
+Eu retenho apenas colunas numéricas e alinho a interseção das três bases na
+mesma ordem, obtendo 37 atributos candidatos. Eu não considero essas exclusões
+uma comprovação de ausência de todo vazamento.
+
+Eu normalizo os rótulos com remoção de espaços nas extremidades e `casefold`,
+sem estabelecer equivalências semânticas entre ataques de nomes diferentes.
+Após a limpeza, eu converto os atributos para `float32` para reduzir memória.
+Eu não aplico padronização ou normalização de escala.
+
+Eu uso uma árvore com `max_depth=8`, `class_weight="balanced"` e seed 42.
+Eu trato o desbalanceamento com pesos de classe em cada ajuste, considerando
+os rótulos do respectivo conjunto de treinamento, sem reamostrar os registros.
+Eu separo esse tratamento da penalização: os pesos afetam o treinamento,
+enquanto a penalização atua nos objetivos entregues ao NSGA-II.
+
+### Como calculo os objetivos e penalizo uma seleção vazia
+
+Eu converto os genes em uma máscara binária pelo limiar `gene >= 0,5`.
+Eu aplico a mesma máscara nas três bases. Para `k > 0`, eu minimizo:
+
+```text
+f_desempenho = 1 - (F1_1 + F1_2 + F1_3 + F1_4 + F1_5 + F1_6) / 6
+f_atributos  = k / 37
+```
+
+Eu treino na origem e testo no destino em cada um dos seis pares ordenados.
+Eu atribuo peso igual às direções e preservo seus F1 individuais. Eu calculo
+o F1 macro com `zero_division=0`. Eu não somo os dois objetivos com um
+coeficiente de penalização; eu procuro compromissos de Pareto entre eles.
+Eu trato a quantidade de atributos como objetivo de parcimônia, sem acrescentar
+um termo de penalização ao erro.
+
+Quando `k = 0`, eu substituo ambos os objetivos por `[1, 1]` e não treino a
+árvore. Eu registro `avaliacao_valida=False` e o motivo
+`nenhuma feature selecionada` no histórico em memória. Eu uso esse vetor
+desfavorável para evitar que `k/37 = 0` favoreça a solução vazia.
+Eu implemento a regra diretamente nos objetivos, sem declarar uma restrição
+formal de desigualdade. Eu não afirmo que essa regra isoladamente garante
+a eliminação da máscara em qualquer população.
+
+Eu confirmei que a regra está habilitada, mas não medi suas ocorrências nesta
+rodada: a máscara vazia retorna antes de consultar ou gravar o cache. Eu não
+interpreto sua ausência no cache como prova de que nenhuma foi gerada, nem uso
+esse cache para contar todas as ocorrências após interrupções.
+
+### Como avalio classes ausentes no treinamento
+
+Eu construo a codificação a partir das classes da origem. Eu codifico como
+`-1` todos os rótulos do destino ausentes nessa origem. Como a árvore só prevê
+classes aprendidas, eu contabilizo esses registros como erros. Eu calculo o
+F1 macro sobre a união dos códigos observados e previstos.
+
+Eu reconheço que agrupo todas as categorias desconhecidas em uma única classe
+`-1`; eu não calculo um F1 separado para cada categoria desconhecida original.
+Eu interpreto o efeito no F1 como consequência dessa definição da métrica,
+sem adicionar outra penalização ao NSGA-II. Eu não trato essa codificação como
+um detector treinado para reconhecer classes desconhecidas.
+
+Eu preservo diagnósticos de classes conhecidas e desconhecidas para discutir
+as taxonomias. Eu não atribuo causalmente todo erro em classes conhecidas à
+mudança de domínio, nem interpreto a partição dos erros como uma decomposição
+aditiva do F1 macro.
+
+### Como delimito minhas conclusões
+
+Eu uso o desempenho cross na Fase 1 e realizo a avaliação detalhada, incluindo
+cinco folds estratificados intra-dataset e comparação com todos os atributos,
+na Fase 2. Eu não uso o F1 intra como objetivo da busca. Como as três bases
+participam da seleção, eu não apresento essa avaliação como teste externo
+independente. Eu preciso dos resultados e de experimentos comparativos para
+avaliar o efeito de cada escolha; a presença dos mecanismos no código não
+demonstra, por si só, melhoria de generalização ou convergência.
+
+Eu conferi estas regras em
+[pré-processamento](../Modulos/preprocessamento.py),
+[preparação do experimento](../Modulos/experimento.py),
+[classificador](../Modulos/classificadores.py),
+[avaliação](../Modulos/avaliacao.py),
+[otimização](../Modulos/otimizacao.py) e na
+[configuração da rodada](../src/config_tres_datasets.yaml).
+
 ## O que preciso adaptar no código
 
 | Onde vou trabalhar | O que preciso alterar |
