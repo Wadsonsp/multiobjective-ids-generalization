@@ -5,7 +5,7 @@ Eu sigo a formulação didática apresentada no código original: cada variável
 de decisão fica no intervalo [0, 1] e eu seleciono uma feature quando o gene
 é maior ou igual a 0,5. O pymoo minimiza os dois objetivos:
 
-1. erro cross-dataset = 1 - média dos F1-macro nas duas direções;
+1. erro cross-dataset = 1 - média dos F1-macro em todas as direções;
 2. proporção de features = número selecionado / número total.
 
 Eu uso o NSGA-II padrão do pymoo. Informo somente o tamanho da população;
@@ -24,17 +24,17 @@ from Modulos.avaliacao import avaliar_fase1_cross_dataset
 class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
     """Eu defino o problema cross-dataset com exatamente dois objetivos.
 
-    Para cada solução, eu uso a mesma máscara nos dois datasets. Eu treino
-    em uma base completa e testo na outra completa, nas duas direções. Em
-    seguida, eu combino os dois F1-macro em um único objetivo de desempenho
+    Para cada solução, eu uso a mesma máscara em todos os datasets. Eu treino
+    em uma base completa e testo na outra completa, em todas as direções. Em
+    seguida, eu combino os F1-macro direcionais em um único objetivo de desempenho
     e mantenho o número de features como o segundo objetivo.
     """
 
     def __init__(self, bases_Xy, nome_clf, seed=42, cache=None):
-        # Eu guardo os dois datasets já alinhados para acessá-los em _evaluate.
-        if len(bases_Xy) != 2:
+        # Eu guardo os datasets já alinhados para acessá-los em _evaluate.
+        if len(bases_Xy) < 2:
             raise ValueError(
-                "Eu preciso de exatamente dois datasets para avaliar as duas direções."
+                "Eu preciso de pelo menos dois datasets para avaliar a transferência."
             )
         self.d = next(iter(bases_Xy.values()))[0].shape[1]
         self.bases_Xy = bases_Xy
@@ -67,7 +67,7 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
         return mascara
 
     def _evaluate(self, x, out, *args, **kwargs):
-        # Eu transformo os genes na mesma máscara binária para as duas bases.
+        # Eu transformo os genes na mesma máscara binária para todas as bases.
         mascara = self.criar_mascara_binaria(x)
         numero_selecionadas = int(mascara.sum())
 
@@ -98,9 +98,9 @@ class ProblemaSelecaoCaracteristicas(ElementwiseProblem):
         # Eu preservo cada direção no histórico e uso somente a média como
         # valor agregado do primeiro objetivo.
         valores_cross = list(criterios["f1_macro_cross_por_direcao"].values())
-        if len(valores_cross) != 2:
+        if len(valores_cross) != len(self.bases_Xy) * (len(self.bases_Xy) - 1):
             raise RuntimeError(
-                "Eu esperava exatamente dois valores de F1 cross-dataset."
+                "Eu esperava um F1 para cada par ordenado de bases diferentes."
             )
         f1_cross_medio = float(
             np.mean(valores_cross)

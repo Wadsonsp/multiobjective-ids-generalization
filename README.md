@@ -1,14 +1,77 @@
 # Seleção multiobjetivo de features para IDS cross-dataset
 
-Projeto experimental da dissertação sobre generalização cross-dataset em
-Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pré-filtro (Fase 1)**
+Neste projeto da minha dissertação de mestrado, investigo a generalização
+cross-dataset em Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pré-filtro (Fase 1)**
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
-features. A escolha e a análise detalhada das soluções acontecem na **Fase 2**.
+features. Eu faço a escolha e a análise detalhada das soluções na **Fase 2**.
+
+## O que pretendo ampliar agora
+
+Eu pretendo passar de dois para três datasets, incluindo o
+**NF-CSE-CIC-IDS2018-v2** na otimização e na avaliação. Vou investigar seis
+direções de transferência, mantendo a identidade de cada origem e destino.
+Eu descrevo minha proposta, as hipóteses e as mudanças necessárias no
+[protocolo do experimento com três datasets](docs/experimento_tres_datasets.md).
+
+Eu converti integralmente o CSV oficial em Parquet e conferi 18.893.708 linhas
+na entrada e na saída. Eu adaptei o pipeline para três bases, com configuração
+própria em `src/config_tres_datasets.yaml`. Eu preservo `src/config.yaml` para
+reproduzir o experimento com duas bases. Não trato a nova rodada como concluída
+antes de verificar seu marcador e suas métricas.
+
+Na ampliação, proponho minimizar `1 - média dos seis F1-macro direcionais` e
+`k/d`. Vou usar todos os registros válidos, avaliar as soluções e o baseline,
+e separar configuração, checkpoints, serviços e saídas por experimento.
+Vou continuar investigando a convergência: como ainda observei melhoria na
+última geração da rodada anterior, não concluo que 15 gerações sejam suficientes.
+
+## Como executo minha rodada com três bases
+
+Eu iniciei a rodada com 34.015.950 registros válidos e 37 atributos comuns.
+Eu uso `src/executar_experimento.py` para encadear otimização, avaliação de todas
+as soluções, baseline e relatórios. Eu identifico o protocolo pela configuração
+e pelos hashes SHA-256 dos três Parquets. Eu não reaproveito o cache da rodada
+com duas bases. Eu armazeno as saídas em `Resultados/tres_datasets_v1/`.
+
+Eu acompanho o serviço com:
+
+```bash
+systemctl --user status ids-tres-datasets.service
+tail -f ~/multiobjective-ids-generalization/Resultados/tres_datasets_v1/logs/execucao.log
+```
+
+Eu verifico `Resultados/tres_datasets_v1/checkpoints/analise.concluida` para
+confirmar que concluí todas as etapas. Eu retomo uma interrupção com o mesmo
+serviço; preservo as avaliações detalhadas já salvas e refaço somente a solução
+que estava em andamento.
+
+Eu instalo o serviço, quando necessário, com:
+
+```bash
+mkdir -p Resultados/tres_datasets_v1/logs ~/.config/systemd/user
+cp deploy/systemd/ids-tres-datasets.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+loginctl enable-linger "$USER"
+systemctl --user enable --now ids-tres-datasets.service
+```
+
+Eu posso parar a rodada com `systemctl --user stop ids-tres-datasets.service`.
+Como alternativa ao serviço, eu executo o mesmo pipeline no terminal:
+
+```bash
+.venv/bin/python -u src/executar_experimento.py --config src/config_tres_datasets.yaml
+```
+
+Eu uso um lock por experimento para evitar duas execuções simultâneas desse
+pipeline. Eu não inicio os scripts individuais em paralelo ao serviço.
+Eu preservo as contagens após limpeza em
+`Resultados/tres_datasets_v1/checkpoints/dados_preprocessamento.json` e consulto
+os relatórios em `Resultados/tres_datasets_v1/figuras/` quando forem produzidos.
 
 ## Resultados disponíveis no repositório
 
-A execução de 7 de setembro de 2026 foi concluída: 15 gerações do NSGA-II,
-avaliação detalhada da solução final e baseline com os 37 atributos.
+Eu concluí a execução com duas bases em 7 de setembro de 2026: 15 gerações do
+NSGA-II, avaliação detalhada da solução final e baseline com os 37 atributos.
 
 - [Relatório completo em PDF](Resultados/figuras/orientadores_final/relatorio_graficos.pdf)
 - [Pacote para download: gráficos, tabelas e dados utilizados](Resultados/figuras/orientadores_final.zip)
@@ -18,26 +81,27 @@ avaliação detalhada da solução final e baseline com os 37 atributos.
 - [Pareto final](Resultados/pareto/pareto_20260907_000921_decision_tree.json)
 - [Avaliações detalhadas](Resultados/metricas/pareto_20260907_000921_decision_tree/)
 
-O HTML do pacote pode ser aberto localmente após extrair o ZIP. Os resultados
-incluem o diagnóstico de convergência; melhora do hipervolume não certifica
-ótimo global nem generalização em um teste externo independente.
+Eu abro o HTML localmente após extrair o ZIP. Incluí o diagnóstico de
+convergência e interpreto a melhora do hipervolume como progresso da busca,
+sem tomá-la como prova de ótimo global ou generalização externa.
 
-## Formulação biobjetivo
+## Como formulei o experimento concluído com duas bases
 
-Cada solução é um vetor real `x` com um gene em `[0, 1]` para cada feature. Eu
+Eu represento cada solução por um vetor real `x`, com um gene em `[0, 1]` para
+cada feature. Eu
 mantenho a feature quando `x >= 0.5` e minimizo:
 
 1. `1 - média(F1-macro UNSW→ToN, F1-macro ToN→UNSW)`;
 2. `número de features selecionadas / número total de features`.
 
-O F1 de cada direção, o diagnóstico de incompatibilidade de taxonomia e o erro
-nas classes conhecidas permanecem separados nos artefatos. A quantidade de
-soluções não dominadas não é definida previamente.
+Eu preservo separadamente o F1 de cada direção, a incompatibilidade de taxonomia
+e o erro nas classes conhecidas. Não defino previamente a quantidade de soluções
+não dominadas; observo o conjunto que a busca produz.
 
-## Estrutura
+## Como organizo o projeto
 
 ```text
-Datasets/                  dois Parquets locais completos
+Datasets/                  meus Parquets e o ZIP da terceira base
 Modulos/
   avaliacao.py             avaliações intra e cross-dataset
   carregamento.py          leitura local e validação dos Parquets
@@ -51,22 +115,26 @@ src/
   config.yaml              configuração central
   graficos_cross.py        figuras da análise
 tests/                     testes unitários e de integração sintética
-Resultados/                Pareto, métricas, checkpoints, logs e figuras
+Resultados/                meus artefatos de cada execução
+docs/                      meu protocolo de ampliação para três datasets
 ```
 
 ## Dados locais
 
-Antes de executar, estes arquivos devem existir:
+No experimento concluído, eu utilizo estes arquivos:
 
 ```text
 Datasets/NF-UNSW-NB15-V2.parquet
 Datasets/NF-ToN-IoT-V2.parquet
 ```
 
-O pipeline lê os dois arquivos completos. Não há parâmetro de subamostragem no
-fluxo científico.
+Eu leio os dois arquivos locais completos e removo apenas os registros inválidos
+conforme o pré-processamento. Não aplico subamostragem no fluxo científico.
+Eu registro a preparação da terceira base em [Datasets/README.md](Datasets/README.md).
 
-## Instalação
+## Como preparo meu ambiente
+
+Eu preparo o ambiente Python com:
 
 ```bash
 python3 -m venv .venv
@@ -74,18 +142,18 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-## Execução
+## Como reproduzo a execução com duas bases
 
-Fase 1, com população 24, 15 gerações e operadores padrão do pymoo:
+Eu executo a Fase 1 com população 24, 15 gerações e operadores padrão do pymoo:
 
 ```bash
 python src/algoritmo1_otimizacao.py
 ```
 
-O cache fica em `Resultados/checkpoints`. Para retomar uma interrupção, eu
+Eu mantenho o cache em `Resultados/checkpoints`. Para retomar uma interrupção, eu
 executo novamente o mesmo comando.
 
-Fase 2, avaliando todas as soluções encontradas:
+Eu avalio todas as soluções encontradas na Fase 2:
 
 ```bash
 python src/algoritmo2_avaliacao.py \
@@ -100,34 +168,36 @@ python src/algoritmo2_avaliacao.py --pareto <arquivo.json> --solucao 0
 python src/algoritmo2_avaliacao.py --mascara cheia
 ```
 
-Depois da Fase 2:
+Depois da Fase 2, eu gero os gráficos:
 
 ```bash
 python src/graficos_cross.py
 ```
 
-## Testes
+## Como verifico a implementação
+
+Eu executo meus testes com:
 
 ```bash
 pytest
 ```
 
-Os testes usam bases sintéticas pequenas. Eles não reduzem nem substituem os
-datasets usados na execução científica.
+Eu uso bases sintéticas pequenas nos testes. Com elas, verifico a implementação
+sem reduzir ou substituir os datasets da execução científica.
 
-## Referência dos datasets
+## Referência que utilizo para os datasets
 
 Sarhan, Layeghy e Portmann, *Towards a Standard Feature Set for Network
 Intrusion Detection System Datasets*, Mobile Networks and Applications, 2022.
 
-## Execução independente da sessão
+## Como reproduzo a execução com duas bases independente da sessão
 
-O serviço `ids-otimizacao.service` executa a Fase 1 com a configuração de
-`src/config.yaml`, reutiliza os checkpoints e reinicia após falhas em 60 segundos.
-Após conclusão normal, grava `Resultados/checkpoints/otimizacao.concluida` e
-não repete o experimento, inclusive após reiniciar o computador.
+Eu configurei `ids-otimizacao.service` para executar a Fase 1 com
+`src/config.yaml`, reutilizar checkpoints e reiniciar após falhas em 60 segundos.
+Eu registro a conclusão em `Resultados/checkpoints/otimizacao.concluida` para
+evitar repetir o experimento após o término ou após reiniciar o computador.
 
-Instalação para o usuário atual (projeto em `~/multiobjective-ids-generalization`):
+Eu instalo o serviço para meu usuário, com o projeto em `~/multiobjective-ids-generalization`:
 
 ```bash
 mkdir -p ~/.config/systemd/user
@@ -137,12 +207,11 @@ loginctl enable-linger "$USER"
 systemctl --user enable --now ids-otimizacao.service
 ```
 
-O `enable-linger` mantém o gerenciador do usuário após logout e permite iniciar
-no boot sem login; dependendo da máquina, exige autorização administrativa.
-Nenhum processo continua executando com a máquina desligada. O serviço retoma
-quando ela volta, reaproveitando as avaliações salvas no cache.
+Eu habilito `enable-linger` para manter o gerenciador após logout e iniciar
+no boot sem login; dependendo da máquina, preciso de autorização administrativa.
+Eu retomo a execução quando a máquina volta, aproveitando as avaliações do cache.
 
-Acompanhamento e parada:
+Eu acompanho ou paro o experimento com:
 
 ```bash
 systemctl --user status ids-otimizacao.service
@@ -150,46 +219,45 @@ tail -f Resultados/logs/nsga2.log
 systemctl --user stop ids-otimizacao.service
 ```
 
-Para desativar também a inicialização automática:
+Eu desativo também a inicialização automática com:
 
 ```bash
 systemctl --user disable --now ids-otimizacao.service
 ```
 
-Uma conclusão bem-sucedida deixa o serviço inativo, com código de saída zero.
-Para repetir intencionalmente uma execução concluída, remova apenas o marcador
-`Resultados/checkpoints/otimizacao.concluida` e inicie o serviço novamente.
-O script usa um lock para impedir execuções simultâneas iniciadas por ele;
-não rode o Python diretamente enquanto o serviço estiver executando.
+Eu verifico o código de saída zero e o marcador para reconhecer uma conclusão
+bem-sucedida, mesmo quando vejo o serviço inativo. Para repetir a mesma rodada,
+posso remover apenas seu marcador de conclusão e iniciar o serviço novamente.
+Eu uso um lock no script e evito iniciar o Python diretamente em paralelo.
+Para três bases, vou criar uma identidade de execução própria; não basta remover
+o marcador antigo ou alterar o YAML.
 
-Como alternativa manual, com o serviço desativado:
+Eu também posso executar manualmente com o serviço desativado:
 
 ```bash
 nohup bash src/executar_otimizacao.sh >> Resultados/logs/nsga2.log 2>&1 < /dev/null &
 ```
 
-O `nohup` protege contra desconexão do terminal, mas não fornece reinício
-automático após falha ou reboot.
+Eu uso `nohup` apenas para proteção contra desconexão do terminal; para retomada
+automática após falha ou reboot, uso os serviços supervisionados.
 
 ## Material para os orientadores
 
-O relatório do checkpoint atual é gerado sem repetir treinamentos:
+Eu gero o relatório do checkpoint ou da execução concluída sem repetir treinamentos:
 
 ```bash
 .venv/bin/python src/relatorio_orientadores.py
 ```
 
-Abra `Resultados/figuras/orientadores_parcial/index.html` ou o
-`relatorio_graficos.pdf` nessa pasta. O ZIP ao lado inclui figuras PNG/PDF,
-tabela CSV e uma cópia dos dados utilizados. O pacote parcial identifica
-explicitamente a geração registrada e não mistura o Pareto do teste antigo.
+Eu consulto `Resultados/figuras/orientadores_parcial/index.html` ou o PDF nessa
+pasta para a saída padrão do comando. Para compartilhar a execução concluída,
+uso o pacote `orientadores_final` vinculado no início deste README. Eu incluo
+figuras PNG/PDF, CSV, uma cópia dos dados e a identificação do estágio da análise.
 
-A continuação automática aguarda o marcador de conclusão da Fase 1, gera os
-gráficos finais de Pareto, avalia cada solução e a máscara completa com cinco
-folds nos datasets completos, e acrescenta a comparação intra/cross ao pacote
-`Resultados/figuras/orientadores_final`. Cada solução detalhada concluída é
-salva atomicamente e reutilizada após uma interrupção. A solução interrompida
-é recalculada; a retomada da Fase 2 ocorre por solução, não por fold.
+Eu configurei a continuação para aguardar a Fase 1, gerar o Pareto, avaliar
+cada solução e a máscara completa com cinco folds, e atualizar o pacote final.
+Eu salvo atomicamente cada solução concluída. Após uma interrupção, reaproveito
+as soluções já salvas e refaço a interrompida; retomo por solução, não por fold.
 
 ```bash
 cp deploy/systemd/ids-analise.service ~/.config/systemd/user/
@@ -198,39 +266,37 @@ systemctl --user enable --now ids-analise.service
 tail -f Resultados/logs/analise.log
 ```
 
-Para parar a avaliação e a geração automática:
+Eu paro a avaliação e a geração automática com:
 
 ```bash
 systemctl --user disable --now ids-analise.service
 ```
 
-A otimização usa o serviço separado `ids-otimizacao.service`. As avaliações
-ficam em `Resultados/metricas/pareto_<execucao>/`; o marcador
-`analise.concluida` nessa pasta indica que todas as soluções, o baseline e os
-gráficos foram finalizados. Enquanto isso, o pacote final pode conter apenas
-as avaliações detalhadas já concluídas.
+Eu mantenho a otimização no serviço separado `ids-otimizacao.service` e salvo
+as avaliações em `Resultados/metricas/pareto_<execucao>/`. Eu verifico o marcador
+`analise.concluida` para distinguir a conclusão de todas as etapas de um pacote
+ainda atualizado parcialmente.
 
 ### Convergência do NSGA-II
 
-O pacote inclui `00_convergencia_hipervolume.png` (e PDF), uma página de
-diagnóstico no relatório e `convergencia_nsga2.csv`. O hipervolume é calculado
-sobre a fronteira sobrevivente de cada geração, com referência fixa `(1.1, 1.1)`
-e os objetivos originais `1 - F1_cross_medio` e `k/d`, ambos em `[0,1]`.
-Não há normalização por geração nem uso de um arquivo acumulado de soluções.
+Eu incluo a curva `00_convergencia_hipervolume.png` e seu PDF, uma página de
+diagnóstico e `convergencia_nsga2.csv`. Eu calculo o hipervolume da fronteira
+sobrevivente em cada geração com referência fixa `(1.1, 1.1)` e objetivos
+`1 - F1_cross_medio` e `k/d`, ambos em `[0,1]`. Não normalizo por geração nem
+substituo essa fronteira pelo conjunto acumulado de soluções visitadas.
 
-As gerações são reconstruídas com a mesma seed, população e operadores,
-consultando somente uma cópia em memória do cache. Não há leitura dos Parquets,
-retreinamento ou escrita nos checkpoints. Máscaras ausentes interrompem o
-procedimento; a fronteira reconstruída precisa coincidir com a salva antes
-que a curva seja publicada. A reconstrução não usa a posição da linha do cache
-como se fosse o número da geração.
+Eu reconstruo as gerações com a mesma seed, população e operadores, consultando
+uma cópia do cache. Não leio Parquets, retreino modelos ou altero checkpoints
+nesse procedimento. Eu interrompo a reconstrução quando falta uma máscara e
+confiro a fronteira reconstruída contra a salva antes de publicar a curva.
+Não interpreto a posição de uma linha do cache como o número de uma geração.
 
-O diagnóstico mostra progresso nos objetivos; não certifica ótimo global,
-estabilidade entre seeds ou generalização independente. O ponto de referência
-é mantido fixo em todas as gerações. Base metodológica:
+Eu interpreto o diagnóstico como progresso nos objetivos, sem concluir ótimo
+global, estabilidade entre seeds ou generalização independente. Eu mantenho
+a referência fixa e consulto a seguinte base metodológica:
 https://pymoo.org/getting_started/part_4.html
 
-Para a análise já em execução, `ids-relatorio.path` observa o marcador de
-conclusão da avaliação de 20260907_000921 e atualiza o pacote final com o
-baseline, sem interromper o treinamento em curso. As próximas execuções do
-gerador já incluem o diagnóstico diretamente.
+Na rodada `20260907_000921`, eu usei `ids-relatorio.path` para atualizar o
+pacote após o baseline. Essa rodada já terminou. Eu mantenho o diagnóstico
+integrado ao gerador e vou adaptar os caminhos dos serviços antes da rodada
+com três bases.

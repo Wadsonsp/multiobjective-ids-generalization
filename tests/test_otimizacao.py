@@ -69,9 +69,9 @@ class TestProblemaBiobjetivo:
         assert out["F"][1] == pytest.approx((problema.d // 2) / problema.d)
         assert problema.historico[-1]["f1_macro_cross_medio"] == pytest.approx(0.80)
 
-    def test_exige_exatamente_dois_datasets(self, bases_Xy):
+    def test_exige_pelo_menos_dois_datasets(self, bases_Xy):
         apenas_uma = {"BASE_A": bases_Xy["BASE_A"]}
-        with pytest.raises(ValueError, match="exatamente dois datasets"):
+        with pytest.raises(ValueError, match="pelo menos dois datasets"):
             ProblemaSelecaoCaracteristicas(apenas_uma, CLF_RAPIDO)
 
 

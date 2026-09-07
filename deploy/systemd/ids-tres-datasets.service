@@ -1,0 +1,22 @@
+[Unit]
+Description=Minha investigacao IDS com tres datasets e seis direcoes
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+WorkingDirectory=%h/multiobjective-ids-generalization
+ExecStart=%h/multiobjective-ids-generalization/.venv/bin/python -u src/executar_experimento.py --config %h/multiobjective-ids-generalization/src/config_tres_datasets.yaml
+Restart=on-failure
+RestartSec=60
+RestartPreventExitStatus=75
+KillMode=control-group
+TimeoutStopSec=60
+Environment=MPLBACKEND=Agg
+Environment=OMP_NUM_THREADS=2
+Environment=OPENBLAS_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+StandardOutput=append:%h/multiobjective-ids-generalization/Resultados/tres_datasets_v1/logs/execucao.log
+StandardError=inherit
+
+[Install]
+WantedBy=default.target

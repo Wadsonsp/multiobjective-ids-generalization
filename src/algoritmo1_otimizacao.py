@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Eu executo a Fase 1: pré-filtro de features com NSGA-II.
 
-Eu carrego os dois Parquets locais completos, aplico o pré-processamento,
+Eu carrego os Parquets locais completos, aplico o pré-processamento,
 executo o problema biobjetivo e salvo localmente o conjunto Pareto e o
 histórico de todas as máscaras avaliadas.
 
@@ -42,7 +42,7 @@ def resolver_caminho_local(caminho):
 
 
 def preparar_bases(config):
-    """Eu leio e pré-processo integralmente os dois datasets locais."""
+    """Eu leio e pré-processo integralmente os datasets locais."""
     brutas = carregar_todas_as_bases(config)
     cfg_pre = config["preprocessamento"]
     bases_Xy = {}
@@ -124,7 +124,13 @@ def main():
         "dados completos | operadores padrão do NSGA-II"
     )
 
-    bases_Xy, ordem = preparar_bases(config)
+    if config.get("experimento"):
+        from Modulos.experimento import preparar_bases as preparar_multiplas, identidade
+        config_id = identidade(config)
+        bases_Xy, ordem = preparar_multiplas(config)
+    else:
+        config_id = None
+        bases_Xy, ordem = preparar_bases(config)
 
     # Eu mantenho cache de avaliações e progresso por geração no disco local.
     # O contexto identifica o experimento; mudar qualquer item daria
@@ -143,6 +149,8 @@ def main():
         "dados_completos": True,
         "seed": cfg_otm["seed"],
     }
+    if config_id:
+        contexto["experimento_id"] = config_id
     sufixo = f"{nome_clf}_full_v2_s{cfg_otm['seed']}"
     cache = CacheAvaliacoes(
         os.path.join(checkpoint_dir, f"cache_{sufixo}.jsonl"), contexto
@@ -176,6 +184,8 @@ def main():
         config,
         rotulo,
         {
+            "experimento_id": config_id,
+            "bases": list(bases_Xy),
             "classificador": nome_clf,
             "n_pop": n_pop,
             "n_gen": n_gen,

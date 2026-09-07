@@ -156,8 +156,7 @@ def avaliar_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
             # --- Diagnóstico da queda cross-dataset ---------------------
             # Separo o teste em duas partições para distinguir as causas:
             # (a) classes do teste que EXISTEM no treino (código >= 0): o
-            #     erro aqui é domain shift puro (mesma classe, distribuição
-            #     diferente, o modelo poderia ter acertado);
+            #     erro aqui não isola causalmente domain shift;
             # (b) classes AUSENTES no treino (código -1): incompatibilidade
             #     de taxonomia - o modelo nunca viu essa classe e não tem
             #     como acertá-la. A queda dessas é estrutural, não de modelo.
@@ -245,8 +244,7 @@ def avaliar_fitness(mascara, bases_Xy, nome_clf, cv_folds=5, seed=42):
 def avaliar_fase1_cross_dataset(mascara, bases_Xy, nome_clf, seed=42):
     """Eu calculo somente os critérios necessários ao pré-filtro NSGA-II.
 
-    Na Fase 1, eu treino na primeira base e testo na segunda; depois faço o
-    caminho inverso. Eu não executo a validação cruzada intra-dataset para
+    Na Fase 1, eu avalio cada par ordenado de bases distintas. Eu não executo a validação cruzada intra-dataset para
     cada indivíduo porque ela não faz parte dos dois objetivos definidos.
     A avaliação detalhada, incluindo CV intra-dataset, permanece na Fase 2.
     """

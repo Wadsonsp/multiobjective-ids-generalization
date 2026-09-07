@@ -20,27 +20,34 @@ from diagnostico_nsga2 import reconstruir
 RAIZ = Path(__file__).resolve().parents[1]
 
 
-def encontrar_pareto_final(raiz=RAIZ):
-    config = yaml.safe_load((raiz / 'src/config.yaml').read_text())
+def encontrar_pareto_final(raiz=RAIZ, config_path=None):
+    config = yaml.safe_load(Path(config_path or raiz/'src/config.yaml').read_text())
     esperado = dict(classificador=config['classificador']['nome'],
                     n_pop=config['otimizacao']['n_pop'],
                     n_gen=config['otimizacao']['n_gen'],
                     seed=config['otimizacao']['seed'], dados_completos=True)
+    if config.get('experimento'):
+        from Modulos.experimento import identidade
+        esperado['experimento_id'] = identidade(config)
     candidatos = []
-    for p in (raiz / 'Resultados/pareto').glob('pareto_*.json'):
+    for p in (raiz / config.get('resultados', {}).get('pasta_pareto', 'Resultados/pareto')).glob('pareto_*.json'):
         dados = json.loads(p.read_text())
         if all(dados.get('configuracao', {}).get(k) == v for k, v in esperado.items()):
             candidatos.append(p)
     return max(candidatos, key=lambda p: p.stat().st_mtime) if candidatos else None
 
 
-def carregar_fonte(pareto=None, raiz=RAIZ):
-    config = yaml.safe_load((raiz / 'src/config.yaml').read_text())
+def carregar_fonte(pareto=None, raiz=RAIZ, config_path=None):
+    config = yaml.safe_load(Path(config_path or raiz/'src/config.yaml').read_text())
     clf, seed = config['classificador']['nome'], config['otimizacao']['seed']
-    pasta = raiz / 'Resultados/checkpoints'
+    pasta = raiz / config.get('resultados', {}).get('pasta_checkpoints', 'Resultados/checkpoints')
     cache_path = pasta / f'cache_{clf}_full_v2_s{seed}.jsonl'
     linhas = cache_path.read_text().splitlines()
     contexto = json.loads(linhas[0])['__contexto__']
+    if config.get('experimento'):
+        from Modulos.experimento import identidade
+        if contexto.get('experimento_id') != identidade(config):
+            raise ValueError('Cache de outro experimento.')
     cache = {}
     for linha in linhas[1:]:
         try:
@@ -51,6 +58,8 @@ def carregar_fonte(pareto=None, raiz=RAIZ):
     if pareto:
         fonte = Path(pareto)
         estado = json.loads(fonte.read_text())
+        if config.get('experimento') and estado['configuracao'].get('experimento_id') != contexto.get('experimento_id'):
+            raise ValueError('Pareto de outro experimento.')
         if estado['atributos'] != contexto['atributos']:
             raise ValueError('Schema do Pareto diverge do cache.')
         mascaras = estado['mascaras']
@@ -71,15 +80,15 @@ def carregar_fonte(pareto=None, raiz=RAIZ):
                 estado=estado, cache=cache, solucoes=solucoes)
 
 
-def gerar(pareto=None, saida=None, metricas=None):
-    if pareto is None and (RAIZ/'Resultados/checkpoints/otimizacao.concluida').exists():
+def gerar(pareto=None, saida=None, metricas=None, config_path=None):
+    if config_path is None and pareto is None and (RAIZ/'Resultados/checkpoints/otimizacao.concluida').exists():
         pareto = encontrar_pareto_final()
         if pareto is not None and metricas is None:
             metricas = RAIZ/'Resultados/metricas'/pareto.stem
-    dados = carregar_fonte(pareto)
+    dados = carregar_fonte(pareto, raiz=RAIZ, config_path=config_path)
     diagnostico = reconstruir(dados)
     dados['diagnostico_nsga2'] = diagnostico
-    saida = Path(saida or RAIZ / 'Resultados/figuras/orientadores_parcial')
+    saida = Path(saida or RAIZ / dados['configuracao']['resultados'].get('pasta_figuras','Resultados/figuras/orientadores_parcial'))
     saida.mkdir(parents=True, exist_ok=True)
     (saida / 'dados_utilizados.json').write_text(json.dumps(dados, ensure_ascii=False, indent=2))
     sols = dados['solucoes']
@@ -105,11 +114,11 @@ def gerar(pareto=None, saida=None, metricas=None):
         fig.text(.08,.91,'Generalização cross-dataset em IDS',fontsize=23,weight='bold')
         fig.text(.08,.85,subtitulo,fontsize=12,color='#0369a1')
         pontos = [
-            f"Fronteira registrada: {len(sols)} soluções, de {min(ks)} a {max(ks)} atributos entre {d} candidatos. F1-macro cross médio entre {min(f1s):.4f} e {max(f1s):.4f}.",
-            "Método: árvore de decisão com profundidade 8 e pesos balanceados, dados completos das duas bases e transferência nas duas direções. A média das direções e a proporção de atributos são os objetivos do NSGA-II.",
+            f"Eu registrei na fronteira: {len(sols)} soluções, de {min(ks)} a {max(ks)} atributos entre {d} candidatos. F1-macro cross médio entre {min(f1s):.4f} e {max(f1s):.4f}.",
+            "Eu utilizei uma árvore de decisão com profundidade 8 e pesos balanceados, dados completos das bases do experimento e transferência em todas as direções. A média das direções e a proporção de atributos são os objetivos do NSGA-II.",
             "Leitura do F1: na implementação atual, classes do destino ausentes no treino são agrupadas no código -1. Não se calcula o F1 individual de cada categoria desconhecida original.",
-            "A partição do erro é por fração de amostras; não decompõe o F1 e não identifica causalmente domain shift. A coluna sem correspondência nas matrizes agrupa previsões fora do vocabulário do destino.",
-            "As bases da transferência participam da seleção de atributos. Estes resultados não constituem avaliação em teste externo independente. Foi utilizada uma única seed.",
+            "Eu particiono o erro por fração de amostras; não decomponho o F1 nem identifico causalmente domain shift. A coluna sem correspondência nas matrizes agrupa previsões fora do vocabulário do destino.",
+            "Eu utilizei as bases da transferência na seleção de atributos. Não realizei teste externo independente nesta rodada e utilizei uma única seed.",
             "Os gráficos intra-dataset aparecem apenas quando houver avaliações detalhadas concluídas. O pacote parcial não contém essa etapa. Os resultados parciais podem mudar ao concluir a geração 15.",
             "Rastreabilidade: veja dados_utilizados.json, resumo_solucoes.csv e LEIA-ME.md no mesmo pacote. Fonte: " + dados['fonte'],
         ]
@@ -146,7 +155,7 @@ def gerar(pareto=None, saida=None, metricas=None):
         fig = plt.figure(figsize=(11.7,8.3))
         fig.text(.08,.9,'Diagnóstico da busca multiobjetivo',fontsize=22,weight='bold')
         textos = [diagnostico['conclusao'],
-                  'Objetivos minimizados: f1 = 1 − F1 cross médio; f2 = k/37. Ambos já estão em [0,1]. Referência fixa r = (1.1, 1.1), pior que todos os valores possíveis. Não há normalização diferente por geração.',
+                  f'Objetivos minimizados: f1 = 1 − F1 cross médio; f2 = k/{d}. Ambos já estão em [0,1]. Referência fixa r = (1.1, 1.1), pior que todos os valores possíveis. Não há normalização diferente por geração.',
                   'A curva mede o hipervolume da fronteira da população sobrevivente em cada geração, não de um arquivo acumulado de todas as soluções já visitadas. O NSGA-II não otimiza diretamente o hipervolume; ele pode oscilar.',
                   diagnostico['metodo'] + ' Nenhum modelo foi retreinado para recuperar esta curva. O cache não foi alterado.',
                   'Melhora do hipervolume mostra progresso nos objetivos definidos. Não comprova ótimo global nem melhora de generalização em teste independente. Uma única seed e 15 gerações não estabelecem robustez.',
@@ -168,15 +177,16 @@ def gerar(pareto=None, saida=None, metricas=None):
         ax.plot(ks,f1s,'o-',color='#0369a1',label='Fronteira da geração registrada')
         for s,k,f in zip(sols,ks,f1s):
             ax.annotate(s['id'],(k,f),xytext=(5,8),textcoords='offset points')
-        ax.set(xlabel=f'Número de atributos selecionados (de {d})',ylabel='Média do F1-macro cross nas duas direções',
+        ax.set(xlabel=f'Número de atributos selecionados (de {d})',ylabel='Média do F1-macro cross em todas as direções',
                title='Compromisso entre parcimônia e desempenho cross-dataset')
         ax.grid(alpha=.2); ax.legend(loc='lower right'); salvar(fig,'01_pareto')
 
         fig, ax = plt.subplots(figsize=(10,6))
         x=np.arange(len(sols))
+        largura = .8 / len(dirs)
         for j,direcao in enumerate(dirs):
             vals=[s['f1_macro_cross_por_direcao'][direcao] for s in sols]
-            bars=ax.bar(x+(j-.5)*.36,vals,.36,label=curto(direcao),color=['#0369a1','#d97706'][j])
+            bars=ax.bar(x+(j-(len(dirs)-1)/2)*largura,vals,largura,label=curto(direcao),color=plt.get_cmap('tab10')(j))
             ax.bar_label(bars,fmt='%.4f',padding=4,fontsize=9)
         ax.set(xticks=x,xticklabels=rotulos,ylabel='F1-macro',ylim=(0,max(f1s+[max(s['f1_macro_cross_por_direcao'].values()) for s in sols])*1.4),
                title='A direção da transferência altera o desempenho')
@@ -221,7 +231,8 @@ def gerar(pareto=None, saida=None, metricas=None):
             salvar(fig,nome)
 
         if avaliacoes:
-            fig,axes=plt.subplots(1,2,figsize=(13,6),sharey=True)
+            fig,axes=plt.subplots(1,len(avaliacoes[0]['f1_macro_intra']),figsize=(7*len(avaliacoes[0]['f1_macro_intra']),6),sharey=True)
+            axes=np.atleast_1d(axes)
             nomes=list(avaliacoes[0]['f1_macro_intra'])
             labels=[]
             for a in avaliacoes:
@@ -229,13 +240,15 @@ def gerar(pareto=None, saida=None, metricas=None):
                 sid=next((s['id'] for s in sols if s['mascara']==chave),'Baseline')
                 labels.append(f"{sid}\nk={a['numero_atributos']}")
             for ax,base in zip(axes,nomes):
-                direcao=next(di for di in dirs if di.split('->')[1]==base)
+                entradas=[di for di in dirs if di.split('->')[1]==base]
                 intra=[a['f1_macro_intra'][base] for a in avaliacoes]
                 desvio=[np.std(a['detalhes_intra'][base]['f1_macro_por_fold'],ddof=1) for a in avaliacoes]
-                cross=[a['f1_macro_cross_por_direcao'][direcao] for a in avaliacoes]
                 x=np.arange(len(avaliacoes))
-                ax.bar(x-.18,intra,.36,yerr=desvio,capsize=3,label='Intra: média ± DP dos folds',color='#0369a1')
-                ax.bar(x+.18,cross,.36,label='Cross: treino na outra base',color='#d97706')
+                largura=.8/(len(entradas)+1)
+                ax.bar(x-len(entradas)*largura/2,intra,largura,yerr=desvio,capsize=3,label='Intra: média ± DP dos folds',color='#0369a1')
+                for j,direcao in enumerate(entradas):
+                    cross=[a['f1_macro_cross_por_direcao'][direcao] for a in avaliacoes]
+                    ax.bar(x+(j+1-len(entradas)/2)*largura,cross,largura,label='Cross: '+curto(direcao.split('->')[0]),color=plt.get_cmap('tab10')(j+1))
                 ax.set(xticks=x,xticklabels=labels,ylim=(0,1),title=curto(base),ylabel='F1-macro')
                 ax.legend(fontsize=8)
             salvar(fig,'06_intra_vs_cross')
@@ -254,16 +267,16 @@ def gerar(pareto=None, saida=None, metricas=None):
         w=csv.DictWriter(arq,fieldnames=campos); w.writeheader(); w.writerows(rows)
     tabela=''.join('<tr>'+''.join(f'<td>{html.escape(str(row[c]))}</td>' for c in campos[:-1])+'</tr>' for row in rows)
     notas=[
-        diagnostico['conclusao'],
+        'Eu observei o seguinte na busca: ' + diagnostico['conclusao'],
         'Hipervolume da fronteira sobrevivente por geração; referência fixa (1.1, 1.1), objetivos em [0,1]. Histórico reconstruído apenas pelo cache e validado contra a fronteira salva. A curva não comprova ótimo global. Método: https://pymoo.org/getting_started/part_4.html',
-        'Os dados são os Parquets completos; não foi aplicada subamostragem. Classificador: árvore de decisão, profundidade 8 e pesos balanceados.',
+        'Eu utilizei os Parquets completos, sem subamostragem, e uma árvore de decisão com profundidade 8 e pesos balanceados.',
         f"NSGA-II: população {dados['configuracao']['otimizacao']['n_pop']}, {dados['geracoes_previstas']} gerações previstas, seed 42. A fronteira mostrada pertence à geração registrada; o cache pode conter avaliações posteriores ainda sem uma geração concluída.",
-        'O F1-macro cross segue a implementação atual: classes do destino ausentes no treino são agrupadas no código -1; a média usa a união dos rótulos observados e previstos. Não equivale a calcular macro-F1 individualmente para cada categoria original desconhecida.',
-        'A partição de erros representa frações de amostras, não uma decomposição do F1. Erros nas classes conhecidas não comprovam isoladamente domain shift.',
-        'As matrizes representam a solução mais compacta. A coluna sem correspondência agrupa previsões de classes da origem ausentes no vocabulário do destino.',
-        'As bases usadas na transferência também participam da seleção das máscaras; estes valores são critérios de seleção, não estimativas em teste externo independente.',
-        'Uma única seed não permite afirmar estabilidade entre execuções. O conjunto apresentado não determina uma solução vencedora sem um critério adicional.',
-        ('A avaliação intra-dataset ainda não está disponível neste pacote.' if not avaliacoes else f'Avaliações detalhadas disponíveis: {len(avaliacoes)}. Barras de dispersão mostram o desvio padrão entre folds, não intervalo de confiança.')]
+        'Eu agrupo classes do destino ausentes no treino no código -1 e calculo o F1-macro sobre a união dos rótulos observados e previstos. Não calculo separadamente cada categoria desconhecida original.',
+        'Eu interpreto a partição de erros como frações de amostras, sem decompor o F1 ou atribuir isoladamente os erros a domain shift.',
+        'Eu apresento as matrizes da solução mais compacta e agrupo na coluna sem correspondência as previsões fora do vocabulário do destino.',
+        'Eu utilizei as bases de transferência na seleção das máscaras e interpreto esses valores como critérios de seleção, sem afirmar teste externo independente.',
+        'Eu não afirmo estabilidade entre execuções com uma única seed e não declaro uma solução vencedora sem um critério adicional.',
+        ('Eu ainda não disponho da avaliação intra-dataset neste pacote.' if not avaliacoes else f'Eu concluí as seguintes avaliações detalhadas: {len(avaliacoes)}. Barras de dispersão mostram o desvio padrão entre folds, não intervalo de confiança.')]
     texto=f"# Resultados para orientação\n\n{dados['status']} — geração {dados['geracao']}/{dados['geracoes_previstas']}.\n\nFonte: {dados['fonte']}\n\n"
     texto+='\n'.join(f'- {n}' for n in notas)+'\n'
     (saida/'LEIA-ME.md').write_text(texto)
@@ -280,5 +293,5 @@ def gerar(pareto=None, saida=None, metricas=None):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--pareto'); p.add_argument('--saida'); p.add_argument('--metricas')
-    a=p.parse_args(); gerar(a.pareto,a.saida,a.metricas)
+    p.add_argument('--pareto'); p.add_argument('--saida'); p.add_argument('--metricas'); p.add_argument('--config')
+    a=p.parse_args(); gerar(a.pareto,a.saida,a.metricas,a.config)

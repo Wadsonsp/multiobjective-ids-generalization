@@ -110,12 +110,22 @@ def main():
     nome_clf = args.classificador or config["classificador"]["nome"]
 
     # Eu repito o pré-processamento da Fase 1 usando todas as linhas.
-    brutas = carregar_todas_as_bases(config)
-    bases_Xy = {}
-    for nome, df in brutas.items():
-        X, y = preprocessar_base(df, cfg_pre, nome_base=nome)
-        bases_Xy[nome] = (X, y)
-    bases_Xy, ordem = alinhar_colunas(bases_Xy)
+    config_id = None
+    if config.get("experimento"):
+        from Modulos.experimento import preparar_bases, identidade
+        config_id = identidade(config)
+        if args.pareto:
+            with open(args.pareto) as f:
+                if json.load(f)['configuracao'].get('experimento_id') != config_id:
+                    raise ValueError('Pareto pertence a outro experimento.')
+        bases_Xy, ordem = preparar_bases(config)
+    else:
+        brutas = carregar_todas_as_bases(config)
+        bases_Xy = {}
+        for nome, df in brutas.items():
+            X, y = preprocessar_base(df, cfg_pre, nome_base=nome)
+            bases_Xy[nome] = (X, y)
+        bases_Xy, ordem = alinhar_colunas(bases_Xy)
 
     mascaras = montar_mascaras(args, d=len(ordem), ordem_atributos=ordem)
     avaliacoes = []
@@ -153,7 +163,7 @@ def main():
             {
                 "fase": "Fase 2 - avaliacao detalhada",
                 "classificador": nome_clf,
-                "configuracao": {"seed": seed, "cv_folds": config["avaliacao"]["cv_folds"],
+                "configuracao": {"experimento_id": config_id, "bases": list(bases_Xy), "seed": seed, "cv_folds": config["avaliacao"]["cv_folds"],
                                  "dados_completos": True},
                 "pareto_origem": os.path.abspath(args.pareto) if args.pareto else None,
                 "atributos": ordem,
