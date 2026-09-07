@@ -1,0 +1,349 @@
+{
+  "registrado_em": "2026-09-07T15:49:06.356309-03:00",
+  "natureza": "Fotografia do estado observado; não representa a conclusão do experimento.",
+  "commit_codigo": "b5ae8ed4bf0124303d8980c6df328dd0c6d5830b",
+  "configuracao": {
+    "datasets": {
+      "pasta_local": "Datasets",
+      "bases": {
+        "NF-UNSW-NB15-v2": {
+          "arquivo": "NF-UNSW-NB15-V2.parquet"
+        },
+        "NF-ToN-IoT-v2": {
+          "arquivo": "NF-ToN-IoT-V2.parquet"
+        },
+        "NF-CSE-CIC-IDS2018-v2": {
+          "arquivo": "NF-CSE-CIC-IDS2018-V2.parquet"
+        }
+      }
+    },
+    "preprocessamento": {
+      "atributos_vazamento": [
+        "L4_SRC_PORT",
+        "L4_DST_PORT",
+        "MIN_TTL",
+        "MAX_TTL"
+      ],
+      "coluna_rotulo": "Attack",
+      "coluna_binaria": "Label",
+      "dtype_features": "float32"
+    },
+    "classificador": {
+      "nome": "decision_tree"
+    },
+    "otimizacao": {
+      "n_pop": 24,
+      "n_gen": 15,
+      "seed": 42
+    },
+    "avaliacao": {
+      "cv_folds": 5,
+      "seed": 42
+    },
+    "resultados": {
+      "pasta_pareto": "Resultados/tres_datasets_v1/pareto",
+      "pasta_metricas": "Resultados/tres_datasets_v1/metricas",
+      "pasta_logs": "Resultados/tres_datasets_v1/logs",
+      "pasta_checkpoints": "Resultados/tres_datasets_v1/checkpoints",
+      "pasta_figuras": "Resultados/tres_datasets_v1/figuras"
+    },
+    "experimento": "tres_datasets_v1"
+  },
+  "experimento_id": "719f71a1ee6bd772035acb352d0434c5eb83481605f1ffb9f44b9962bfd330ef",
+  "servico": {
+    "NRestarts": "0",
+    "ActiveState": "active",
+    "SubState": "running",
+    "ActiveEnterTimestamp": "Mon 2026-09-07 01:50:47 -03"
+  },
+  "preprocessamento": {
+    "contagens": {
+      "NF-UNSW-NB15-v2": {
+        "originais": 1986745,
+        "validos": 1986745,
+        "removidos": 0
+      },
+      "NF-ToN-IoT-v2": {
+        "originais": 13135881,
+        "validos": 13135750,
+        "removidos": 131
+      },
+      "NF-CSE-CIC-IDS2018-v2": {
+        "originais": 18893708,
+        "validos": 18893455,
+        "removidos": 253
+      }
+    },
+    "atributos": [
+      "PROTOCOL",
+      "L7_PROTO",
+      "IN_BYTES",
+      "IN_PKTS",
+      "OUT_BYTES",
+      "OUT_PKTS",
+      "TCP_FLAGS",
+      "CLIENT_TCP_FLAGS",
+      "SERVER_TCP_FLAGS",
+      "FLOW_DURATION_MILLISECONDS",
+      "DURATION_IN",
+      "DURATION_OUT",
+      "LONGEST_FLOW_PKT",
+      "SHORTEST_FLOW_PKT",
+      "MIN_IP_PKT_LEN",
+      "MAX_IP_PKT_LEN",
+      "SRC_TO_DST_SECOND_BYTES",
+      "DST_TO_SRC_SECOND_BYTES",
+      "RETRANSMITTED_IN_BYTES",
+      "RETRANSMITTED_IN_PKTS",
+      "RETRANSMITTED_OUT_BYTES",
+      "RETRANSMITTED_OUT_PKTS",
+      "SRC_TO_DST_AVG_THROUGHPUT",
+      "DST_TO_SRC_AVG_THROUGHPUT",
+      "NUM_PKTS_UP_TO_128_BYTES",
+      "NUM_PKTS_128_TO_256_BYTES",
+      "NUM_PKTS_256_TO_512_BYTES",
+      "NUM_PKTS_512_TO_1024_BYTES",
+      "NUM_PKTS_1024_TO_1514_BYTES",
+      "TCP_WIN_MAX_IN",
+      "TCP_WIN_MAX_OUT",
+      "ICMP_TYPE",
+      "ICMP_IPV4_TYPE",
+      "DNS_QUERY_ID",
+      "DNS_QUERY_TYPE",
+      "DNS_TTL_ANSWER",
+      "FTP_COMMAND_RET_CODE"
+    ]
+  },
+  "progresso": {
+    "geracao": 2,
+    "avaliacoes": 48,
+    "mascaras_parciais": [
+      [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      [
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1
+      ]
+    ],
+    "objetivos_parciais": [
+      [
+        0.9581818544931847,
+        0.3783783783783784
+      ],
+      [
+        0.9567305033875525,
+        0.40540540540540543
+      ],
+      [
+        0.9455197263991304,
+        0.4864864864864865
+      ],
+      [
+        0.9476995087304727,
+        0.4594594594594595
+      ],
+      [
+        0.9621349490117764,
+        0.35135135135135137
+      ]
+    ]
+  },
+  "cache": {
+    "avaliacoes_unicas": 50,
+    "linhas_incompletas_na_leitura": 0,
+    "sha256_snapshot": "2b748b5f88a9331edafb73a0a789cb1e7f56e2b7962277c960320329226f6ce3",
+    "ultima_gravacao": "2026-09-07T15:38:51.873491-03:00"
+  },
+  "log_snapshot": "[etapa] algoritmo1_otimizacao.py\n[config] h=decision_tree | N_pop=24 | N_gen=15 | dados completos | operadores padrão do NSGA-II\n[base] NF-UNSW-NB15-v2: 1986745 registros válidos de 1986745, 37 atributos\n[higienizacao] NF-ToN-IoT-v2: removi 131 fluxos com NaN, infinito ou valor fora do intervalo float32\n[base] NF-ToN-IoT-v2: 13135750 registros válidos de 13135881, 37 atributos\n[higienizacao] NF-CSE-CIC-IDS2018-v2: removi 253 fluxos com NaN, infinito ou valor fora do intervalo float32\n[base] NF-CSE-CIC-IDS2018-v2: 18893455 registros válidos de 18893708, 37 atributos\n[schema] 37 atributos comuns; 6 direções\n[checkpoint] 0 avaliações recuperadas em /home/wadson.pereira/multiobjective-ids-generalization/Resultados/tres_datasets_v1/checkpoints\n==========================================================\nn_gen  |  n_eval  | n_nds  |      eps      |   indicator  \n==========================================================\n     1 |       24 |      3 |             - |             -\n     2 |       48 |      5 |  0.3944093989 |         ideal\n",
+  "otimizacao_concluida": false,
+  "analise_concluida": false
+}

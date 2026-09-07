@@ -5,6 +5,16 @@ cross-dataset em Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pr
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
 features. Eu faço a escolha e a análise detalhada das soluções na **Fase 2**.
 
+## Como registro minhas decisões e descobertas
+
+Eu mantenho um [diário de pesquisa](docs/diario_de_pesquisa.md) para apresentar
+aos meus orientadores as decisões metodológicas, suas justificativas, as
+evidências observadas e as questões ainda em aberto. Eu registro ali por que
+mantive inicialmente 15 gerações e por que não considero esse orçamento uma
+prova de convergência. Eu preservo fotografias datadas da execução em
+[docs/registros](docs/registros/), distinguindo acompanhamento parcial de
+resultados concluídos.
+
 ## O que pretendo ampliar agora
 
 Eu pretendo passar de dois para três datasets, incluindo o

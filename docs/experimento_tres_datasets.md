@@ -1,5 +1,13 @@
 # Minha investigação com três datasets NetFlow v2
 
+## Onde acompanho minhas decisões
+
+Eu mantenho o histórico das escolhas, suas justificativas e as observações
+posteriores no [meu diário de pesquisa](diario_de_pesquisa.md). Eu uso este
+protocolo para descrever o desenho experimental e o diário para explicar sua
+evolução, incluindo a manutenção inicial de 15 gerações e as limitações dessa
+escolha. Eu não reinterpreto uma decisão exploratória como convergência comprovada.
+
 ## O que pretendo investigar
 
 Na minha dissertação, procuro entender se a seleção multiobjetivo de atributos
