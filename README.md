@@ -5,6 +5,23 @@ Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pré-filtro (Fase 1
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
 features. A escolha e a análise detalhada das soluções acontecem na **Fase 2**.
 
+## Resultados disponíveis no repositório
+
+A execução de 7 de setembro de 2026 foi concluída: 15 gerações do NSGA-II,
+avaliação detalhada da solução final e baseline com os 37 atributos.
+
+- [Relatório completo em PDF](Resultados/figuras/orientadores_final/relatorio_graficos.pdf)
+- [Pacote para download: gráficos, tabelas e dados utilizados](Resultados/figuras/orientadores_final.zip)
+- [Curva de hipervolume por geração](Resultados/figuras/orientadores_final/00_convergencia_hipervolume.png)
+- [Comparação intra/cross com baseline](Resultados/figuras/orientadores_final/06_intra_vs_cross.png)
+- [Notas metodológicas e interpretação](Resultados/figuras/orientadores_final/LEIA-ME.md)
+- [Pareto final](Resultados/pareto/pareto_20260907_000921_decision_tree.json)
+- [Avaliações detalhadas](Resultados/metricas/pareto_20260907_000921_decision_tree/)
+
+O HTML do pacote pode ser aberto localmente após extrair o ZIP. Os resultados
+incluem o diagnóstico de convergência; melhora do hipervolume não certifica
+ótimo global nem generalização em um teste externo independente.
+
 ## Formulação biobjetivo
 
 Cada solução é um vetor real `x` com um gene em `[0, 1]` para cada feature. Eu

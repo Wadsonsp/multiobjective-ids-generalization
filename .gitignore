@@ -6,7 +6,9 @@ __pycache__/
 htmlcov/
 .pytest_cache/
 Resultados/checkpoints/
-Resultados/figuras/
+Resultados/figuras/*
+!Resultados/figuras/orientadores_final/
+!Resultados/figuras/orientadores_final.zip
 Resultados/pareto/*.json
 Resultados/metricas/*.json
 Resultados/logs/*
@@ -14,3 +16,8 @@ Resultados/logs/*
 Datasets/*.parquet
 
 Resultados/metricas/pareto_*/
+
+# Artefatos da execução concluída, incluídos para revisão pelos orientadores.
+!Resultados/pareto/pareto_20260907_000921_decision_tree.json
+!Resultados/metricas/historico_20260907_000921_decision_tree.json
+!Resultados/metricas/pareto_20260907_000921_decision_tree/
