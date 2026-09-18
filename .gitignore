@@ -22,8 +22,10 @@ Resultados/metricas/pareto_*/
 !Resultados/metricas/historico_20260907_000921_decision_tree.json
 !Resultados/metricas/pareto_20260907_000921_decision_tree/
 
-# Eu mantenho as bases brutas e a execução em andamento apenas no ambiente local.
+# Eu mantenho as bases brutas apenas no ambiente local.
 Datasets/*.zip
 Datasets/*.parquet.tmp
 Datasets/*.proveniencia.json
-Resultados/tres_datasets_v1/
+# Eu versiono os resultados de três datasets e mantenho arquivos de execução locais.
+Resultados/tres_datasets_v1/checkpoints/
+Resultados/tres_datasets_v1/logs/
