@@ -5,6 +5,21 @@ cross-dataset em Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pr
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
 features. Eu faço a escolha e a análise detalhada das soluções na **Fase 2**.
 
+## Meu roteiro e os resultados atuais com três bases
+
+Eu reuni a explicação das mudanças no código, os resultados e sua contribuição
+para minha dissertação no [meu roteiro de apresentação](docs/roteiro_tres_datasets.md),
+atualizado em 17/09/2026. Eu confirmei a conclusão desta rodada em 10/09/2026:
+15 gerações, quatro soluções e uma avaliação com todos os 37 atributos.
+Eu encontrei seleções de 7 a 12 atributos com F1-macro cross médio entre
+0,046460 e 0,061615; no baseline, obtive 0,035290. Eu reconheço os valores
+absolutos baixos e a ausência de teste externo independente.
+
+Eu consulto o [relatório de três bases](Resultados/tres_datasets_v1/figuras/relatorio_graficos.pdf)
+e as [avaliações detalhadas](Resultados/tres_datasets_v1/metricas/pareto_20260910_053058_decision_tree/).
+Eu preservo abaixo o planejamento e as observações datadas do início da rodada;
+eu uso o roteiro para consultar a síntese atual dos resultados.
+
 ## Como registro minhas decisões e descobertas
 
 Eu mantenho um [diário de pesquisa](docs/diario_de_pesquisa.md) para apresentar

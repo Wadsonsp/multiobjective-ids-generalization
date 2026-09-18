@@ -1,5 +1,13 @@
 # Minha investigação com três datasets NetFlow v2
 
+## Minha atualização de resultados em 17/09/2026
+
+Eu confirmei a conclusão da rodada em 10/09/2026, com quatro soluções finais
+e o baseline avaliados. Eu apresento as mudanças de código, os números e a
+contribuição para minha dissertação no [meu roteiro atualizado](roteiro_tres_datasets.md).
+Eu preservo a seguir o planejamento e o registro de início do experimento;
+as afirmações de que eu ainda aguardava resultados descrevem aquela etapa.
+
 ## Onde acompanho minhas decisões
 
 Eu mantenho o histórico das escolhas, suas justificativas e as observações

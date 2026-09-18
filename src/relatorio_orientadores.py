@@ -129,9 +129,9 @@ def gerar(pareto=None, saida=None, metricas=None, config_path=None):
             y-=.032*(linhas.count('\n')+1)+.025
         pdf.savefig(fig)
         plt.close(fig)
-        def salvar(fig, nome):
+        def salvar(fig, nome, rect=(0,.045,1,1)):
             fig.text(.5, .015, subtitulo, ha='center', fontsize=8, color='#475569')
-            fig.tight_layout(rect=(0,.045,1,1))
+            fig.tight_layout(rect=rect)
             fig.savefig(saida / f'{nome}.png', dpi=200)
             fig.savefig(saida / f'{nome}.pdf')
             pdf.savefig(fig)
@@ -192,24 +192,45 @@ def gerar(pareto=None, saida=None, metricas=None, config_path=None):
                title='A direção da transferência altera o desempenho')
         ax.legend(); ax.grid(axis='y',alpha=.2); salvar(fig,'02_f1_por_direcao')
 
-        fig, ax = plt.subplots(figsize=(11,6))
-        desconhecidas=[]; erros=[]; labels=[]
-        for s in sols:
+        # Eu separo as soluções para manter legíveis as seis transferências.
+        colunas = min(2, len(sols))
+        linhas = (len(sols) + colunas - 1) // colunas
+        fig, axes = plt.subplots(linhas, colunas, squeeze=False, sharey=True,
+                                 figsize=(9 * colunas, 4.6 * linhas + 1.3))
+        pares = [[textwrap.wrap(nome, width=16, break_long_words=False)
+                  for nome in direcao.split('->')] for direcao in dirs]
+        altura_rotulo = max(len(nome) for par in pares for nome in par)
+        labels = ['\n'.join(origem + [''] * (altura_rotulo - len(origem))
+                            + ['→'] + destino + [''] * (altura_rotulo - len(destino)))
+                  for origem, destino in pares]
+        x = np.arange(len(dirs))
+        for ax, s in zip(axes.flat, sols):
+            desconhecidas = []
+            erros = []
             for direcao in dirs:
-                info=s['diagnostico_cross'][direcao]
-                p=info['prop_desconhecidas']
-                desconhecidas.append(p); erros.append((1-p)*(1-info['acuracia_classes_conhecidas']))
-                labels.append(f"{s['id']}\n{curto(direcao)}")
-        x=np.arange(len(labels))
-        ax.bar(x,desconhecidas,color='#7c3aed',label='Amostras de classes ausentes no treino')
-        ax.bar(x,erros,bottom=desconhecidas,color='#d97706',label='Erros em classes presentes no treino')
-        ax.set(xticks=x,xticklabels=labels,ylim=(0,1),ylabel='Fração das amostras do destino',
-               title='Partição do erro de classificação por grupo de classes')
-        ax.tick_params(axis='x',labelsize=8,rotation=25)
-        ax.legend(loc='upper center', bbox_to_anchor=(.5,1.02), fontsize=9)
-        ax.set_ylim(0,1.16)
-        ax.set_yticks(np.arange(0,1.01,.2))
-        salvar(fig,'03_erro_por_grupo')
+                info = s['diagnostico_cross'][direcao]
+                p = info['prop_desconhecidas']
+                desconhecidas.append(p)
+                erros.append((1-p)*(1-info['acuracia_classes_conhecidas']))
+            ax.bar(x, desconhecidas, color='#7c3aed',
+                   label='Amostras de classes ausentes no treino')
+            ax.bar(x, erros, bottom=desconhecidas, color='#d97706',
+                   label='Erros em classes presentes no treino')
+            ax.set(xticks=x, xticklabels=labels, ylim=(0, 1),
+                   ylabel='Fração das amostras do destino',
+                   title=f"{s['id']} · {s['numero_atributos']} atributos",
+                   xlabel='Origem → destino', yticks=np.arange(0, 1.01, .2))
+            ax.tick_params(axis='x', labelsize=9, rotation=0)
+            ax.grid(axis='y', alpha=.2)
+            ax.set_axisbelow(True)
+        for ax in list(axes.flat)[len(sols):]:
+            ax.set_visible(False)
+        fig.suptitle('Partição do erro de classificação por grupo de classes',
+                     fontsize=15, y=.995)
+        handles, legendas = axes.flat[0].get_legend_handles_labels()
+        fig.legend(handles, legendas, loc='upper center', bbox_to_anchor=(.5, .955),
+                   fontsize=10, ncol=1, frameon=False)
+        salvar(fig, '03_erro_por_grupo', rect=(0, .045, 1, .88))
 
         fig, ax = plt.subplots(figsize=(12,max(4,len(sols)*.65+2)))
         selecao=np.array([s['mascara'] for s in sols])
