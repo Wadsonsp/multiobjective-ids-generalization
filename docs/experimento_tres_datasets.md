@@ -1,5 +1,10 @@
 # Minha investigação com três datasets NetFlow v2
 
+Eu preservo este documento como registro do experimento com árvore. Em 21/09/2026,
+eu iniciei a implementação de um [novo protocolo com MLP e treino conjunto](experimento_mlp_conjunto.md),
+com um [roteiro próprio](roteiro_mlp_conjunto.md). Os números abaixo pertencem ao protocolo anterior.
+
+
 ## Minha atualização de resultados em 17/09/2026
 
 Eu confirmei a conclusão da rodada em 10/09/2026, com quatro soluções finais

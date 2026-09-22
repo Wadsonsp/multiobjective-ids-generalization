@@ -1,0 +1,253 @@
+{
+  "experimento_id": "c8426886785f1dff36e57a796044c9bd7629cb76f20865b3e33983a5231a02a6",
+  "atributos": [
+    "PROTOCOL",
+    "L7_PROTO",
+    "IN_BYTES",
+    "IN_PKTS",
+    "OUT_BYTES",
+    "OUT_PKTS",
+    "TCP_FLAGS",
+    "CLIENT_TCP_FLAGS",
+    "SERVER_TCP_FLAGS",
+    "FLOW_DURATION_MILLISECONDS",
+    "DURATION_IN",
+    "DURATION_OUT",
+    "LONGEST_FLOW_PKT",
+    "SHORTEST_FLOW_PKT",
+    "MIN_IP_PKT_LEN",
+    "MAX_IP_PKT_LEN",
+    "SRC_TO_DST_SECOND_BYTES",
+    "DST_TO_SRC_SECOND_BYTES",
+    "RETRANSMITTED_IN_BYTES",
+    "RETRANSMITTED_IN_PKTS",
+    "RETRANSMITTED_OUT_BYTES",
+    "RETRANSMITTED_OUT_PKTS",
+    "SRC_TO_DST_AVG_THROUGHPUT",
+    "DST_TO_SRC_AVG_THROUGHPUT",
+    "NUM_PKTS_UP_TO_128_BYTES",
+    "NUM_PKTS_128_TO_256_BYTES",
+    "NUM_PKTS_256_TO_512_BYTES",
+    "NUM_PKTS_512_TO_1024_BYTES",
+    "NUM_PKTS_1024_TO_1514_BYTES",
+    "TCP_WIN_MAX_IN",
+    "TCP_WIN_MAX_OUT",
+    "ICMP_TYPE",
+    "ICMP_IPV4_TYPE",
+    "DNS_QUERY_ID",
+    "DNS_QUERY_TYPE",
+    "DNS_TTL_ANSWER",
+    "FTP_COMMAND_RET_CODE"
+  ],
+  "classes": [
+    "benign",
+    "exploits",
+    "generic",
+    "fuzzers",
+    "backdoor",
+    "dos",
+    "reconnaissance",
+    "shellcode",
+    "worms",
+    "analysis",
+    "ransomware",
+    "xss",
+    "scanning",
+    "password",
+    "ddos",
+    "injection",
+    "mitm",
+    "ssh-bruteforce",
+    "ddos attacks-loic-http",
+    "ddos attack-hoic",
+    "dos attacks-slowloris",
+    "dos attacks-hulk",
+    "ftp-bruteforce",
+    "infilteration",
+    "bot",
+    "dos attacks-goldeneye",
+    "brute force -web",
+    "dos attacks-slowhttptest",
+    "sql injection",
+    "ddos attack-loic-udp",
+    "brute force -xss"
+  ],
+  "bases": [
+    "NF-UNSW-NB15-v2",
+    "NF-ToN-IoT-v2",
+    "NF-CSE-CIC-IDS2018-v2"
+  ],
+  "totais": {
+    "treino": 24500089,
+    "validacao": 4304724,
+    "teste": 5211137
+  },
+  "contagens": {
+    "treino": {
+      "NF-UNSW-NB15-v2": {
+        "benign": 1354560,
+        "fuzzers": 13498,
+        "exploits": 20358,
+        "reconnaissance": 9889,
+        "generic": 4214,
+        "dos": 2840,
+        "shellcode": 1048,
+        "backdoor": 625,
+        "worms": 130,
+        "analysis": 534
+      },
+      "NF-ToN-IoT-v2": {
+        "benign": 2616128,
+        "scanning": 2871182,
+        "xss": 1709975,
+        "dos": 448503,
+        "password": 683634,
+        "ddos": 1214276,
+        "ransomware": 2715,
+        "mitm": 5399,
+        "injection": 467823,
+        "backdoor": 6843
+      },
+      "NF-CSE-CIC-IDS2018-v2": {
+        "benign": 11592135,
+        "ddos attack-hoic": 764961,
+        "dos attacks-hulk": 302878,
+        "ddos attacks-loic-http": 217991,
+        "infilteration": 68580,
+        "ssh-bruteforce": 63518,
+        "dos attacks-goldeneye": 19466,
+        "ftp-bruteforce": 12086,
+        "dos attacks-slowloris": 6833,
+        "bot": 6762,
+        "dos attacks-slowhttptest": 6800,
+        "ddos attack-loic-udp": 1454,
+        "brute force -web": 1499,
+        "sql injection": 317,
+        "brute force -xss": 635
+      }
+    },
+    "validacao": {
+      "NF-UNSW-NB15-v2": {
+        "benign": 300657,
+        "fuzzers": 2880,
+        "exploits": 4567,
+        "generic": 882,
+        "dos": 656,
+        "reconnaissance": 774,
+        "shellcode": 212,
+        "backdoor": 100,
+        "worms": 28,
+        "analysis": 113
+      },
+      "NF-ToN-IoT-v2": {
+        "benign": 244509,
+        "scanning": 87417,
+        "xss": 367219,
+        "dos": 105030,
+        "ddos": 231053,
+        "ransomware": 398,
+        "mitm": 1126,
+        "password": 144410,
+        "injection": 103324,
+        "backdoor": 81
+      },
+      "NF-CSE-CIC-IDS2018-v2": {
+        "benign": 2292379,
+        "ddos attack-hoic": 157070,
+        "bot": 132631,
+        "dos attacks-hulk": 64748,
+        "ssh-bruteforce": 21471,
+        "ddos attacks-loic-http": 13931,
+        "infilteration": 13873,
+        "dos attacks-slowhttptest": 5888,
+        "dos attacks-goldeneye": 4056,
+        "dos attacks-slowloris": 2349,
+        "brute force -web": 369,
+        "ddos attack-loic-udp": 299,
+        "brute force -xss": 162,
+        "sql injection": 61,
+        "ftp-bruteforce": 1
+      }
+    },
+    "teste": {
+      "NF-UNSW-NB15-v2": {
+        "benign": 256449,
+        "fuzzers": 4267,
+        "exploits": 4980,
+        "dos": 676,
+        "generic": 896,
+        "reconnaissance": 508,
+        "shellcode": 167,
+        "backdoor": 108,
+        "analysis": 123,
+        "worms": 6
+      },
+      "NF-ToN-IoT-v2": {
+        "benign": 740557,
+        "dos": 100826,
+        "xss": 372761,
+        "scanning": 43570,
+        "ddos": 301261,
+        "ransomware": 244,
+        "mitm": 1157,
+        "password": 165674,
+        "injection": 89320,
+        "backdoor": 9335
+      },
+      "NF-CSE-CIC-IDS2018-v2": {
+        "benign": 2750852,
+        "ddos attack-hoic": 158827,
+        "ddos attacks-loic-http": 75378,
+        "dos attacks-hulk": 65022,
+        "infilteration": 33908,
+        "ftp-bruteforce": 13846,
+        "ssh-bruteforce": 9990,
+        "dos attacks-goldeneye": 4201,
+        "bot": 3704,
+        "dos attacks-slowhttptest": 1428,
+        "ddos attack-loic-udp": 307,
+        "brute force -web": 275,
+        "dos attacks-slowloris": 330,
+        "brute force -xss": 130,
+        "sql injection": 54
+      }
+    }
+  },
+  "limpeza": {
+    "NF-UNSW-NB15-v2": {
+      "originais": 1986745,
+      "validos": 1986745,
+      "removidos": 0
+    },
+    "NF-ToN-IoT-v2": {
+      "originais": 13135881,
+      "validos": 13135750,
+      "removidos": 131
+    },
+    "NF-CSE-CIC-IDS2018-v2": {
+      "originais": 18893708,
+      "validos": 18893455,
+      "removidos": 253
+    }
+  },
+  "grupos": "hash dos atributos float32 comuns; sem origem nem rótulo",
+  "fracoes_planejadas": [
+    0.7,
+    0.15,
+    0.15
+  ],
+  "seed": 42,
+  "status": "DADOS PREPARADOS; MLP E BUSCA AINDA NÃO EXECUTADAS",
+  "fracoes_observadas": {
+    "treino": 0.720252969562808,
+    "validacao": 0.12655016249729906,
+    "teste": 0.1531968679398929
+  },
+  "grupos_distintos": {
+    "treino": 8088577,
+    "validacao": 1730517,
+    "teste": 1733094
+  },
+  "grupos_compartilhados_entre_particoes": 0,
+  "data_registro": "2026-09-21"
+}

@@ -1,0 +1,43 @@
+# Eu inicio um novo protocolo; não reaproveito resultados da árvore.
+experimento: mlp_conjunto_v1
+seed: 42
+datasets:
+  pasta_local: Datasets
+  bases:
+    NF-UNSW-NB15-v2:
+      arquivo: NF-UNSW-NB15-V2.parquet
+    NF-ToN-IoT-v2:
+      arquivo: NF-ToN-IoT-V2.parquet
+    NF-CSE-CIC-IDS2018-v2:
+      arquivo: NF-CSE-CIC-IDS2018-V2.parquet
+preprocessamento:
+  atributos_vazamento: [L4_SRC_PORT, L4_DST_PORT, MIN_TTL, MAX_TTL]
+  coluna_rotulo: Attack
+  coluna_binaria: Label
+divisao:
+  metodo: hash_grupos_atributos
+  fracoes: [0.70, 0.15, 0.15]
+mlp:
+  camadas: 3
+  multiplicador_atributos: 2
+  ativacao: relu
+  taxa_aprendizado: 0.001
+  alpha: 0.0001
+  batch_size: 1024
+  epocas_maximas: 30
+  paciencia: 5
+  min_delta: 0.0001
+  pesos_balanceados: true
+otimizacao:
+  n_pop: 24
+  n_gen: 100
+tempo:
+  eventos: 65536
+  lote: 4096
+  aquecimentos: 2
+  repeticoes: 7
+recursos:
+  lote_dados: 65536
+  threads: 2
+resultados:
+  pasta: Resultados/mlp_conjunto_v1

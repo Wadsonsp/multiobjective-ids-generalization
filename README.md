@@ -5,6 +5,27 @@ cross-dataset em Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pr
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
 features. Eu faço a escolha e a análise detalhada das soluções na **Fase 2**.
 
+## Meu novo experimento com MLP conjunta — 21/09/2026
+
+Eu implementei um protocolo independente com treino conjunto das três bases,
+MLP com três camadas de `2k` neurônios, NSGA-II com 100 gerações e seed 42,
+e três objetivos: `1 − F1-macro`, `k/d` e tempo por evento.
+Eu apresento o Pareto somente em **2D**, verificando sua orientação e um possível
+joelho sem impor formato de curva. Eu separo treino, validação e teste por grupos
+de entradas idênticas e avalio o teste apenas após fixar as escolhas.
+
+Eu descrevo configuração, execução e limitações no
+[protocolo da MLP](docs/experimento_mlp_conjunto.md) e preparo minha fala no
+[novo roteiro](docs/roteiro_mlp_conjunto.md). Eu preservo abaixo os resultados
+anteriores com árvore e seis transferências. Eu não os apresento como resultados
+da MLP. A configuração nova está em `src/config_mlp_conjunto.yaml`.
+
+```bash
+.venv/bin/python -u src/executar_experimento_mlp.py --etapa preparar
+.venv/bin/python -u src/executar_experimento_mlp.py --etapa baseline
+.venv/bin/python -u src/executar_experimento_mlp.py --etapa completo
+```
+
 ## Meu roteiro e os resultados atuais com três bases
 
 Eu reuni a explicação das mudanças no código, os resultados e sua contribuição

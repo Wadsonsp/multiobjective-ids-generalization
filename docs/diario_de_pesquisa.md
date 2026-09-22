@@ -269,6 +269,27 @@ disponíveis. Eu acrescentei documentação sem modificar o código ou reiniciar
 o serviço. Eu uso como referência de implementação o commit `b5ae8ed` e a
 configuração `src/config_tres_datasets.yaml`.
 
+## Entrada 004 — 21/09/2026: minha nova orientação com MLP
+
+Eu recebi do Eduardo a orientação de passar para 100 gerações, manter seed 42,
+unir as três bases no treinamento, usar uma MLP com três camadas de duas vezes
+a quantidade de atributos e acrescentar o tempo de inferência por evento.
+Eu também preciso rever a leitura do Pareto e apresentar resultados por classe.
+
+Eu implementei um protocolo separado, com treino/validação/teste aproximados de
+70%/15%/15%, agrupando entradas idênticas antes da divisão. Eu interpretei o
+tamanho das camadas como `2k`, dependente da seleção. Eu registrei os parâmetros
+adicionais como decisões de implementação, e não como escolhas expressas pelo orientador.
+
+Eu apresento somente gráficos de Pareto 2D, conforme solicitado. Eu verifico o
+sentido dos eixos e um candidato geométrico a joelho; eu não garanto uma barriga.
+Eu preservo os registros da árvore e não comparo diretamente seu hipervolume
+com o novo indicador de três objetivos.
+
+Eu detalho os procedimentos e limites no [novo protocolo](experimento_mlp_conjunto.md)
+e no [roteiro para orientação](roteiro_mlp_conjunto.md). Eu registro a conclusão
+científica da rodada somente depois da execução real, separando-a dos testes de software.
+
 ## Como vou acrescentar minhas próximas entradas
 
 Eu vou registrar mudanças de dataset, métrica, taxonomia, seed, população,

@@ -29,3 +29,10 @@ Datasets/*.proveniencia.json
 # Eu versiono os resultados de três datasets e mantenho arquivos de execução locais.
 Resultados/tres_datasets_v1/checkpoints/
 Resultados/tres_datasets_v1/logs/
+
+# Eu mantenho dados derivados, modelos e estado de execução da MLP locais.
+Resultados/mlp_conjunto*/dados/
+Resultados/mlp_conjunto*/modelos/
+Resultados/mlp_conjunto*/execucao.lock
+Resultados/mlp_conjunto*/geracoes/
+Resultados/mlp_conjunto*/progresso.json

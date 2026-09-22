@@ -1,0 +1,42 @@
+{
+  "fonte": "Resultados/tres_datasets_v1/figuras/resumo_solucoes.csv",
+  "sha256": "f1d7add064c20b5380f5c00da6f28bf4ea5fa70a2ed4674684f78cc11bb7fe28",
+  "experimento": "árvore anterior; não MLP",
+  "diagnostico": {
+    "indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "joelho_indice": 1,
+    "desvio_normalizado": 0.41876415489688823,
+    "conclusao": "Há um candidato geométrico a joelho abaixo da reta entre extremos. Não é prova de ótimo, convergência ou escolha automática."
+  },
+  "pontos": [
+    {
+      "id": "S1",
+      "atributos": 7,
+      "f1": 0.04645997970412766,
+      "erro": 0.9535400202958724
+    },
+    {
+      "id": "S2",
+      "atributos": 8,
+      "f1": 0.0584658648021664,
+      "erro": 0.9415341351978336
+    },
+    {
+      "id": "S3",
+      "atributos": 11,
+      "f1": 0.05852620885979876,
+      "erro": 0.9414737911402012
+    },
+    {
+      "id": "S4",
+      "atributos": 12,
+      "f1": 0.06161467863552505,
+      "erro": 0.938385321364475
+    }
+  ]
+}

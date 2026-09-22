@@ -1,5 +1,10 @@
 # Meu roteiro para explicar a ampliação para três datasets
 
+Eu preservo este documento como registro do experimento com árvore. Em 21/09/2026,
+eu iniciei a implementação de um [novo protocolo com MLP e treino conjunto](experimento_mlp_conjunto.md),
+com um [roteiro próprio](roteiro_mlp_conjunto.md). Os números abaixo pertencem ao protocolo anterior.
+
+
 Eu atualizei este roteiro em 17/09/2026, com base no código e nos resultados salvos de `tres_datasets_v1`. Eu confirmei no marcador local a conclusão da análise em **10/09/2026, às 08h21, no horário UTC−3**. Eu concluí esta rodada experimental; ainda considero suas conclusões exploratórias dentro da dissertação.
 
 Eu detalho a leitura de todas as figuras na [seção 6](#6-como-eu-explico-cada-gráfico-durante-a-apresentação), incluindo os quatro painéis da partição do erro, as seis matrizes de S1 e exemplos numéricos para minha fala.

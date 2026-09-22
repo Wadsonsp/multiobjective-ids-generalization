@@ -1,0 +1,87 @@
+{
+  "experimento_id": "c8426886785f1dff36e57a796044c9bd7629cb76f20865b3e33983a5231a02a6",
+  "configuracao": {
+    "experimento": "mlp_conjunto_v1",
+    "seed": 42,
+    "datasets": {
+      "pasta_local": "Datasets",
+      "bases": {
+        "NF-UNSW-NB15-v2": {
+          "arquivo": "NF-UNSW-NB15-V2.parquet"
+        },
+        "NF-ToN-IoT-v2": {
+          "arquivo": "NF-ToN-IoT-V2.parquet"
+        },
+        "NF-CSE-CIC-IDS2018-v2": {
+          "arquivo": "NF-CSE-CIC-IDS2018-V2.parquet"
+        }
+      }
+    },
+    "preprocessamento": {
+      "atributos_vazamento": [
+        "L4_SRC_PORT",
+        "L4_DST_PORT",
+        "MIN_TTL",
+        "MAX_TTL"
+      ],
+      "coluna_rotulo": "Attack",
+      "coluna_binaria": "Label"
+    },
+    "divisao": {
+      "metodo": "hash_grupos_atributos",
+      "fracoes": [
+        0.7,
+        0.15,
+        0.15
+      ]
+    },
+    "mlp": {
+      "camadas": 3,
+      "multiplicador_atributos": 2,
+      "ativacao": "relu",
+      "taxa_aprendizado": 0.001,
+      "alpha": 0.0001,
+      "batch_size": 1024,
+      "epocas_maximas": 30,
+      "paciencia": 5,
+      "min_delta": 0.0001,
+      "pesos_balanceados": true
+    },
+    "otimizacao": {
+      "n_pop": 24,
+      "n_gen": 100
+    },
+    "tempo": {
+      "eventos": 65536,
+      "lote": 4096,
+      "aquecimentos": 2,
+      "repeticoes": 7
+    },
+    "recursos": {
+      "lote_dados": 65536,
+      "threads": 2
+    },
+    "resultados": {
+      "pasta": "Resultados/mlp_conjunto_v1"
+    }
+  },
+  "contexto": {
+    "dados_config": "65d96dcc27f7715f4c0b96e3d51d285428d169fa8e9a205c83f91e306da65030",
+    "codigo": {
+      "Modulos/dados_mlp.py": "810e8009c44820e893286b8259922da3d124d096a932ee057f344771d7289227",
+      "Modulos/modelo_mlp.py": "50af4af88a20db7352917d03a2f06092403a64a84163b5f3bd10e6e0a9b679c1",
+      "Modulos/busca_mlp.py": "e8265c91cf05cdb0609c0a7db994397d1ab28c89ef579e6e70e199280e8b8d30",
+      "src/executar_experimento_mlp.py": "b262b43d191f055109b3b4c3df51b00058ae9b1019af0f491a537be8588f5cda"
+    },
+    "versoes": {
+      "numpy": "2.5.2",
+      "pandas": "3.0.5",
+      "sklearn": "1.9.0",
+      "pymoo": "0.6.2"
+    },
+    "maquina": "ppgia88-pucpr",
+    "processador": "x86_64",
+    "plataforma": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "threads": 2
+  }
+}
