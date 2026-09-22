@@ -1,0 +1,16 @@
+{
+  "inicio_solicitado_utc": "2026-09-22T06:54:48.381550+00:00",
+  "commit": "f73c168a93c9634a46883f1cb5cc1015087de92c",
+  "branch": "experimento/mlp-tres-objetivos",
+  "experimento_id": "c8426886785f1dff36e57a796044c9bd7629cb76f20865b3e33983a5231a02a6",
+  "etapa": "completo",
+  "servico": "ids-mlp-conjunto.service",
+  "comando": "bash src/executar_mlp_servico.sh completo",
+  "fluxo": [
+    "reutilizar baseline",
+    "100 gerações NSGA-II",
+    "fixar escolhas pela validação",
+    "avaliar teste reservado",
+    "gerar relatório final"
+  ]
+}

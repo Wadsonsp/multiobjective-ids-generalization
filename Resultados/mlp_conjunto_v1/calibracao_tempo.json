@@ -1,0 +1,5 @@
+{
+  "referencia_s": 1.6312293548583983e-06,
+  "maximo_baseline_s": 1.7561195220947265e-06,
+  "metodo": "Referência fixa: mediana por evento do baseline na validação. HV usa t/(t+referência); NSGA-II usa segundos/evento sem transformação."
+}
