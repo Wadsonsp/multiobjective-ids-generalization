@@ -116,7 +116,7 @@ mkdir -p ~/.config/systemd/user
 cp deploy/systemd/ids-mlp-baseline.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user start ids-mlp-baseline.service
-journalctl --user -u ids-mlp-baseline.service -f
+tail -f Resultados/mlp_conjunto_v1/logs/baseline.log
 ```
 
 Eu confirmo o término pelo arquivo `Resultados/mlp_conjunto_v1/baseline_validacao.json`
@@ -130,7 +130,7 @@ mkdir -p ~/.config/systemd/user
 cp deploy/systemd/ids-mlp-conjunto.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user start ids-mlp-conjunto.service
-journalctl --user -u ids-mlp-conjunto.service -f
+tail -f Resultados/mlp_conjunto_v1/logs/execucao.log
 ```
 
 Eu paro com `systemctl --user stop ids-mlp-conjunto.service`. A continuidade após logout depende da configuração de persistência do gerenciador de usuário da máquina. Eu não inicio o terminal e o serviço simultaneamente; o lock recusa uma segunda execução.

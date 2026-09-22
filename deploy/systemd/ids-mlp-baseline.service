@@ -5,7 +5,7 @@ StartLimitIntervalSec=0
 [Service]
 Type=exec
 WorkingDirectory=%h/multiobjective-ids-generalization
-ExecStart=%h/multiobjective-ids-generalization/.venv/bin/python -u src/executar_experimento_mlp.py --config %h/multiobjective-ids-generalization/src/config_mlp_conjunto.yaml --etapa baseline
+ExecStart=/usr/bin/bash %h/multiobjective-ids-generalization/src/executar_mlp_servico.sh baseline
 Restart=on-failure
 RestartSec=60
 RestartPreventExitStatus=75
