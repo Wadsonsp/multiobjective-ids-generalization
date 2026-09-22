@@ -1,0 +1,14 @@
+{
+  "inicio_solicitado_utc": "2026-09-22T01:22:44.244665+00:00",
+  "branch": "experimento/mlp-tres-objetivos",
+  "commit": "b1e4bd8d0613c9555c863ebfcb3998d242e71339",
+  "experimento_id": "c8426886785f1dff36e57a796044c9bd7629cb76f20865b3e33983a5231a02a6",
+  "etapa": "baseline",
+  "servico": "ids-mlp-baseline.service",
+  "comando": ".venv/bin/python -u src/executar_experimento_mlp.py --config src/config_mlp_conjunto.yaml --etapa baseline",
+  "push_github": "pendente: autenticação indisponível no ambiente do assistente",
+  "primeiro_commit": "302f81cf4a334bead35f3bedaddec3ebab059e76",
+  "reinicio_solicitado_utc": "2026-09-22T01:25:07.380697+00:00",
+  "motivo_reinicio": "Redirecionar logs para arquivo local; journal indisponível. Código científico e dados preservados.",
+  "comando_servico": "bash src/executar_mlp_servico.sh baseline"
+}
