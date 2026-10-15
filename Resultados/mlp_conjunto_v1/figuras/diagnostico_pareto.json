@@ -1,0 +1,18 @@
+{
+  "indices": [
+    0,
+    3,
+    4,
+    6,
+    7,
+    8,
+    10,
+    11,
+    14,
+    15,
+    16
+  ],
+  "joelho_indice": 7,
+  "desvio_normalizado": 0.3718171822620761,
+  "conclusao": "Há um candidato geométrico a joelho abaixo da reta entre extremos. Não é prova de ótimo, convergência ou escolha automática."
+}
