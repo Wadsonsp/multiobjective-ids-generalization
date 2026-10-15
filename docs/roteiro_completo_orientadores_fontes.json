@@ -1,0 +1,304 @@
+{
+  "data": "2026-10-15",
+  "geracao_mlp": 53,
+  "arquivos": {
+    "Resultados/metricas/pareto_20260907_000921_decision_tree/avaliacao_baseline.json": "95e7c300b33f9abe111d1805e1a6e91bf6fe9617589b60fbfd200f470fdb6239",
+    "Resultados/tres_datasets_v1/metricas/pareto_20260910_053058_decision_tree/avaliacao_baseline.json": "4cf4cade87f34981e809d8169a04840b1f800b93ea2439c5daa209cc471259da",
+    "Resultados/figuras/orientadores_final/resumo_solucoes.csv": "7e7bb4b8b5edee57d5b2e9279519a3767642c9fc939206b78abd0c4a27b71298",
+    "Resultados/tres_datasets_v1/figuras/resumo_solucoes.csv": "f1d7add064c20b5380f5c00da6f28bf4ea5fa70a2ed4674684f78cc11bb7fe28",
+    "Resultados/mlp_conjunto_v1/figuras/resumo_validacao.csv": "8edbc93c246a4fe12ad5ca378746e4f02eb35bb831fa1d2aee447d274470f246",
+    "Resultados/mlp_conjunto_v1/preparacao_resumo.json": "77f2e8288a5841300619760cca3710fb2ae2c67aaa5fc6bf1d402263c538c646",
+    "Resultados/mlp_conjunto_v1/geracoes/001.json": "82dfbd63a5e33bd4946676cec9add48997795569b395ecbc85da586137886ac5",
+    "Resultados/mlp_conjunto_v1/geracoes/053.json": "a59e514dd4daf2a0061494e476ac8a95e236e7669ef96bda2f28abb3caef9e2d",
+    "Resultados/mlp_conjunto_v1/baseline_validacao.json": "4ac6f7b9b25851b131f63a485bb48b1bd30511367b8381b18826da9f735c70b7",
+    "Resultados/tres_datasets_v1/metricas/pareto_20260910_053058_decision_tree/avaliacao_solucao_03.json": "d82d704cbb48b64b049c48318b6ff1c348f5ac22992224512ebaf2d17fadb7ff",
+    "Modulos/otimizacao.py": "a46e70e9028d0b173bc02179fefa4ab22e397be3a8f0a2e13325c1fc4ed28e44",
+    "Modulos/busca_mlp.py": "e8265c91cf05cdb0609c0a7db994397d1ab28c89ef579e6e70e199280e8b8d30",
+    "Modulos/carregamento.py": "eaec71990629ca87cae7a9acbc8140870543d00eff0db8c8254f667e70ee6d38",
+    "Modulos/preprocessamento.py": "01da257ee287b072420a5ca07439f2afbe81fa5079554497b28c573cd7477a3b",
+    "Modulos/dados_mlp.py": "810e8009c44820e893286b8259922da3d124d096a932ee057f344771d7289227",
+    "src/config_mlp_conjunto.yaml": "3903cfa16f0fa827d634e64b88479ea3f58fc73e5d237220e96bdd299b2c6872",
+    "Modulos/classificadores.py": "73b6f879e1c1fbc864d9536da3a00a28a889f961a83f91942a65f24fdd4443ab",
+    "Modulos/avaliacao.py": "2a953ef13d08ce621c527d3ea39cd90cf24e078b40dd071b45b0ca4dcec0fc01",
+    "src/algoritmo2_avaliacao.py": "06a4a9f6bab3401158b40f07cf397207cabbf72512477ec86b0c5e375ce6f2c4",
+    "src/diagnostico_nsga2.py": "e08fded93c4a8ff4a0320cc24c5be9069f0dabf77334859d81dd567f4206dc8a",
+    "src/relatorio_orientadores.py": "63a649a06e86599c8421cb28142deef830bdd3fe16ede8b3d20cd3eb3e47b140",
+    "src/graficos_cross.py": "7e0248978e6edde243803329c830f08003fc27da6dfa66ce74671c855f9971f9",
+    "Modulos/modelo_mlp.py": "50af4af88a20db7352917d03a2f06092403a64a84163b5f3bd10e6e0a9b679c1",
+    "src/relatorio_mlp.py": "62e74e6a541a9c33f7ecc5186da211d0fc3a8f33e11cc3cf7759df5e04fe4355",
+    "src/executar_experimento.py": "c0853977a090b693acb86d00ed794ac3c3cbc6dcb75e6e678802bdb608ef2b15",
+    "src/executar_experimento_mlp.py": "b262b43d191f055109b3b4c3df51b00058ae9b1019af0f491a537be8588f5cda"
+  },
+  "recortes": [
+    {
+      "arquivo": "Modulos/otimizacao.py",
+      "inicio": 109,
+      "fim": 113,
+      "conteudo": "        # Eu normalizo a quantidade de features como no código fornecido.\n        proporcao_features = numero_selecionadas / self.d\n\n        # Eu entrego ao pymoo os dois objetivos que ele deve minimizar.\n        out[\"F\"] = [1.0 - f1_cross_medio, proporcao_features]"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 48,
+      "fim": 51,
+      "conteudo": "            valor = dict(mascara=mascara.tolist(), k=k, treinamento=resumo,\n                         validacao=validacao, tempo=tempo,\n                         objetivos=[1-validacao['geral']['f1_macro'], k/self.dados.d,\n                                    tempo['mediana_s']])"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 57,
+      "fim": 68,
+      "conteudo": "class ProblemaMLP(ElementwiseProblem):\n    def __init__(self, avaliador):\n        self.avaliador = avaliador\n        super().__init__(n_var=avaliador.dados.d, n_obj=3, n_ieq_constr=1, xl=0., xu=1.)\n\n    def _evaluate(self, x, out, *args, **kwargs):\n        mascara = (np.asarray(x) >= .5).astype(int)\n        if not mascara.any():\n            out['F'], out['G'] = [1., 1., 1.], [1.]\n            return\n        out['F'] = self.avaliador.obter(mascara)['objetivos']\n        out['G'] = [-1.]"
+    },
+    {
+      "arquivo": "Modulos/carregamento.py",
+      "inicio": 88,
+      "fim": 89,
+      "conteudo": "        if nrows is None:\n            df = pd.read_parquet(caminho, columns=colunas_leitura)"
+    },
+    {
+      "arquivo": "Modulos/preprocessamento.py",
+      "inicio": 27,
+      "fim": 42,
+      "conteudo": "    limite_float32 = np.finfo(np.float32).max\n    linhas_validas = np.ones(len(df), dtype=bool)\n\n    # Eu percorro uma coluna por vez para não criar uma segunda matriz com\n    # milhões de linhas somente para verificar os limites numéricos.\n    for coluna in df.columns:\n        serie = df[coluna]\n        if is_numeric_dtype(serie.dtype):\n            valores = serie.to_numpy(copy=False)\n            linhas_validas &= np.isfinite(valores)\n            linhas_validas &= valores <= limite_float32\n            linhas_validas &= valores >= -limite_float32\n        else:\n            linhas_validas &= serie.notna().to_numpy()\n\n    return df.loc[linhas_validas].reset_index(drop=True)"
+    },
+    {
+      "arquivo": "Modulos/dados_mlp.py",
+      "inicio": 86,
+      "fim": 92,
+      "conteudo": "            numericos = df[atributos].to_numpy(dtype=np.float64)\n            rotulos = df[pre['coluna_rotulo']].astype('string').str.strip().str.casefold()\n            ok = (np.isfinite(numericos).all(axis=1)\n                  & (np.abs(numericos) <= np.finfo(np.float32).max).all(axis=1)\n                  & rotulos.notna().to_numpy() & rotulos.ne('').fillna(False).to_numpy())\n            X = numericos[ok].astype('float32')\n            X[X == 0] = 0  # Eu unifico +0 e -0 na identificação das duplicatas."
+    },
+    {
+      "arquivo": "src/config_mlp_conjunto.yaml",
+      "inicio": 13,
+      "fim": 16,
+      "conteudo": "preprocessamento:\n  atributos_vazamento: [L4_SRC_PORT, L4_DST_PORT, MIN_TTL, MAX_TTL]\n  coluna_rotulo: Attack\n  coluna_binaria: Label"
+    },
+    {
+      "arquivo": "Modulos/preprocessamento.py",
+      "inicio": 62,
+      "fim": 68,
+      "conteudo": "    y = df[coluna_rotulo].astype(\"string\").str.strip().str.casefold()\n    X = df.drop(columns=[c for c in (coluna_rotulo, coluna_binaria) if c in df.columns])\n    # Garanto matriz exclusivamente numérica: qualquer coluna não numérica\n    # remanescente (ex.: identificador esquecido) é descartada com aviso\n    # implícito via lista de colunas resultante.\n    X = X.select_dtypes(include=[np.number])\n    return X, y"
+    },
+    {
+      "arquivo": "Modulos/preprocessamento.py",
+      "inicio": 103,
+      "fim": 113,
+      "conteudo": "    colunas_comuns = None\n    for X, _ in bases_Xy.values():\n        cols = set(X.columns)\n        colunas_comuns = cols if colunas_comuns is None else (colunas_comuns & cols)\n\n    # Ordem determinística (ordem de aparição na primeira base) para a\n    # máscara ser reprodutível entre execuções\n    primeira = next(iter(bases_Xy.values()))[0]\n    ordem = [c for c in primeira.columns if c in colunas_comuns]\n\n    return {nome: (X[ordem].copy(), y) for nome, (X, y) in bases_Xy.items()}, ordem"
+    },
+    {
+      "arquivo": "Modulos/otimizacao.py",
+      "inicio": 59,
+      "fim": 67,
+      "conteudo": "    def decidir_features_mantidas(self, x):\n        \"\"\"Eu devolvo os índices cujos genes atingiram o limiar de 0,5.\"\"\"\n        return np.where(np.asarray(x) >= 0.5)[0]\n\n    def criar_mascara_binaria(self, x):\n        \"\"\"Eu converto os genes contínuos para a máscara usada nas bases.\"\"\"\n        mascara = np.zeros(self.d, dtype=int)\n        mascara[self.decidir_features_mantidas(x)] = 1\n        return mascara"
+    },
+    {
+      "arquivo": "Modulos/otimizacao.py",
+      "inicio": 140,
+      "fim": 140,
+      "conteudo": "    algoritmo = NSGA2(pop_size=n_pop)"
+    },
+    {
+      "arquivo": "Modulos/otimizacao.py",
+      "inicio": 150,
+      "fim": 158,
+      "conteudo": "    res = minimize(\n        problema,\n        algoritmo,\n        (\"n_gen\", n_gen),\n        seed=seed,\n        verbose=verbose,\n        save_history=False,\n        **kwargs_minimize,\n    )"
+    },
+    {
+      "arquivo": "Modulos/classificadores.py",
+      "inicio": 15,
+      "fim": 19,
+      "conteudo": "        return DecisionTreeClassifier(\n            max_depth=8,\n            class_weight=\"balanced\",\n            random_state=seed,\n        )"
+    },
+    {
+      "arquivo": "Modulos/avaliacao.py",
+      "inicio": 129,
+      "fim": 154,
+      "conteudo": "    for nome_i in nomes:\n        for nome_j in nomes:\n            if nome_i == nome_j:\n                continue\n            X_i, y_i = bases_Xy[nome_i]\n            X_j, y_j = bases_Xy[nome_j]\n\n            X_tr = aplicar_mascara(X_i, mascara)\n            X_te = aplicar_mascara(X_j, mascara)\n\n            # Eu uso exatamente as features selecionadas, sem reescalonar.\n            classes_treino = np.unique(y_i)\n            modelo = criar_classificador(nome_clf, seed=seed)\n            _treinar(modelo, X_tr, _codificar_rotulos(y_i, classes_treino))\n\n            # Tempo médio de inferência POR AMOSTRA (linha 12)\n            inicio = time.perf_counter()\n            y_pred = _prever(modelo, X_te)\n            duracao = time.perf_counter() - inicio\n            tempos_inferencia.append(duracao / max(len(X_te), 1))\n\n            y_te_cod = _codificar_rotulos(y_j, classes_treino)\n            f1 = f1_score(y_te_cod, y_pred, average=\"macro\", zero_division=0)\n\n            # Registro por direção de transferência (linha 9)\n            resultados[f\"{nome_i}->{nome_j}\"] = float(f1)"
+    },
+    {
+      "arquivo": "Modulos/avaliacao.py",
+      "inicio": 79,
+      "fim": 79,
+      "conteudo": "    skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=seed)"
+    },
+    {
+      "arquivo": "src/algoritmo2_avaliacao.py",
+      "inicio": 66,
+      "fim": 68,
+      "conteudo": "    if args.mascara == \"cheia\":\n        # Baseline: todos os atributos selecionados (k(x) = d)\n        return [(0, np.ones(d, dtype=int))]"
+    },
+    {
+      "arquivo": "Modulos/avaliacao.py",
+      "inicio": 68,
+      "fim": 69,
+      "conteudo": "    indice = {c: i for i, c in enumerate(classes)}\n    return np.array([indice.get(v, -1) for v in y])"
+    },
+    {
+      "arquivo": "src/diagnostico_nsga2.py",
+      "inicio": 35,
+      "fim": 41,
+      "conteudo": "    def registrar(alg):\n        F = np.atleast_2d(alg.opt.get('F'))\n        mascaras = (np.atleast_2d(alg.opt.get('X')) >= .5).astype(int)\n        historico.append(dict(geracao=int(alg.n_gen), avaliacoes=int(alg.evaluator.n_eval),\n                              hipervolume=float(hv(F)),\n                              solucoes_unicas=len(np.unique(mascaras, axis=0)),\n                              objetivos=F.tolist(), mascaras=mascaras.tolist()))"
+    },
+    {
+      "arquivo": "src/relatorio_orientadores.py",
+      "inicio": 174,
+      "fim": 182,
+      "conteudo": "        ax.scatter([c['numero_atributos'] for c in cache],\n                   [np.mean(list(c['f1_macro_cross_por_direcao'].values())) for c in cache],\n                   color='#94a3b8', alpha=.45, s=25, label=f\"Máscaras avaliadas no cache ({len(cache)})\")\n        ax.plot(ks,f1s,'o-',color='#0369a1',label='Fronteira da geração registrada')\n        for s,k,f in zip(sols,ks,f1s):\n            ax.annotate(s['id'],(k,f),xytext=(5,8),textcoords='offset points')\n        ax.set(xlabel=f'Número de atributos selecionados (de {d})',ylabel='Média do F1-macro cross em todas as direções',\n               title='Compromisso entre parcimônia e desempenho cross-dataset')\n        ax.grid(alpha=.2); ax.legend(loc='lower right'); salvar(fig,'01_pareto')"
+    },
+    {
+      "arquivo": "src/relatorio_orientadores.py",
+      "inicio": 187,
+      "fim": 190,
+      "conteudo": "        for j,direcao in enumerate(dirs):\n            vals=[s['f1_macro_cross_por_direcao'][direcao] for s in sols]\n            bars=ax.bar(x+(j-(len(dirs)-1)/2)*largura,vals,largura,label=curto(direcao),color=plt.get_cmap('tab10')(j))\n            ax.bar_label(bars,fmt='%.4f',padding=4,fontsize=9)"
+    },
+    {
+      "arquivo": "src/relatorio_orientadores.py",
+      "inicio": 212,
+      "fim": 214,
+      "conteudo": "                p = info['prop_desconhecidas']\n                desconhecidas.append(p)\n                erros.append((1-p)*(1-info['acuracia_classes_conhecidas']))"
+    },
+    {
+      "arquivo": "src/relatorio_orientadores.py",
+      "inicio": 236,
+      "fim": 238,
+      "conteudo": "        selecao=np.array([s['mascara'] for s in sols])\n        indices=np.where(selecao.any(axis=0))[0]\n        ax.imshow(selecao[:,indices],cmap='Blues',vmin=0,vmax=1,aspect='auto')"
+    },
+    {
+      "arquivo": "src/relatorio_orientadores.py",
+      "inicio": 247,
+      "fim": 247,
+      "conteudo": "            plot_matriz_confusao(sols[0]['diagnostico_cross'],direcao,str(caminho))"
+    },
+    {
+      "arquivo": "src/graficos_cross.py",
+      "inicio": 62,
+      "fim": 63,
+      "conteudo": "    soma_linha = cm.sum(axis=1, keepdims=True)\n    cm_norm = np.divide(cm, soma_linha, out=np.zeros_like(cm), where=soma_linha > 0)"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 24,
+      "fim": 31,
+      "conteudo": "    suporte = cm.sum(axis=1)\n    previstos = cm.sum(axis=0)\n    acertos = np.diag(cm)\n    recall = np.divide(acertos, suporte, out=np.zeros(len(classes)), where=suporte > 0)\n    precisao = np.divide(acertos, previstos, out=np.zeros(len(classes)), where=previstos > 0)\n    f1 = np.divide(2*acertos, suporte+previstos, out=np.zeros(len(classes)),\n                   where=(suporte+previstos) > 0)\n    return dict(f1_macro=float(f1.mean()), acuracia=float(acertos.sum()/max(1, cm.sum())),"
+    },
+    {
+      "arquivo": "Modulos/dados_mlp.py",
+      "inicio": 33,
+      "fim": 42,
+      "conteudo": "    grupos = pd.util.hash_pandas_object(pd.DataFrame(X), index=False).to_numpy()\n    # Eu misturo os bits com uma semente fixa sem depender da ordem de leitura.\n    with np.errstate(over='ignore'):\n        h = grupos ^ np.uint64(seed)\n        h = (h ^ (h >> np.uint64(30))) * np.uint64(0xbf58476d1ce4e5b9)\n        h = (h ^ (h >> np.uint64(27))) * np.uint64(0x94d049bb133111eb)\n        h ^= h >> np.uint64(31)\n    u = (h >> np.uint64(11)).astype(np.float64) / (2 ** 53)\n    partes = np.searchsorted(np.cumsum(fracoes)[:2], u, side='right')\n    return grupos, partes"
+    },
+    {
+      "arquivo": "Modulos/dados_mlp.py",
+      "inicio": 118,
+      "fim": 119,
+      "conteudo": "                if parte == 'treino':\n                    scaler.partial_fit(X[selecao])"
+    },
+    {
+      "arquivo": "Modulos/dados_mlp.py",
+      "inicio": 159,
+      "fim": 165,
+      "conteudo": "    def transformar(self, X, indices):\n        selecionado = np.array(X[:, indices], dtype='float32', copy=True)\n        selecionado -= self.media[indices]\n        selecionado /= self.escala[indices]\n        if not np.isfinite(selecionado).all():\n            raise ValueError('Transformação produziu valores não finitos.')\n        return selecionado"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 76,
+      "fim": 80,
+      "conteudo": "        modelo = MLPClassifier(hidden_layer_sizes=(2*len(indices),)*3,\n                               activation=cfg['ativacao'], solver='adam',\n                               learning_rate_init=cfg['taxa_aprendizado'], alpha=cfg['alpha'],\n                               batch_size=cfg['batch_size'], random_state=config['seed'],\n                               shuffle=False, early_stopping=False, max_iter=1)"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 71,
+      "fim": 72,
+      "conteudo": "    contagens = np.bincount(treino['y'], minlength=len(classes))\n    pesos = n / (len(classes) * contagens)"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 83,
+      "fim": 94,
+      "conteudo": "    while estado['epoca'] < cfg['epocas_maximas'] and estado['sem_melhora'] < cfg['paciencia']:\n        inicio = time.perf_counter()\n        epoca = estado['epoca'] + 1\n        rng = np.random.default_rng(config['seed'] + epoca)\n        ordem = rng.permutation(n)\n        modelo = estado['modelo']\n        for pos in range(0, n, config['recursos']['lote_dados']):\n            sel = ordem[pos:pos+config['recursos']['lote_dados']]\n            X = dados.transformar(treino['X'][sel], indices)\n            y = treino['y'][sel]\n            modelo.partial_fit(X, y, classes=classes,\n                              sample_weight=pesos[y] if cfg['pesos_balanceados'] else None)"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 99,
+      "fim": 104,
+      "conteudo": "        if f1 > estado['melhor_f1'] + cfg['min_delta']:\n            estado.update(melhor_modelo=copy.deepcopy(modelo), melhor_f1=f1,\n                          melhor_epoca=epoca, sem_melhora=0)\n        else:\n            estado['sem_melhora'] += 1\n        estado['epoca'] = epoca"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 77,
+      "fim": 77,
+      "conteudo": "    baseline = avaliador.obter(np.ones(d, dtype=int))"
+    },
+    {
+      "arquivo": "Modulos/modelo_mlp.py",
+      "inicio": 129,
+      "fim": 144,
+      "conteudo": "    def prever():\n        for inicio in range(0, n, cfg['lote']):\n            modelo.predict(dados.transformar(X[inicio:inicio+cfg['lote']], indices))\n    for _ in range(cfg['aquecimentos']):\n        prever()\n    totais = []\n    for _ in range(cfg['repeticoes']):\n        inicio = time.perf_counter_ns()\n        prever()\n        totais.append((time.perf_counter_ns()-inicio)/1e9)\n    por_evento = np.array(totais)/n\n    return dict(eventos=n, lote=cfg['lote'], repeticoes=cfg['repeticoes'],\n                segundos_totais=totais, segundos_por_evento=por_evento.tolist(),\n                mediana_s=float(np.median(por_evento)), maximo_observado_s=float(por_evento.max()),\n                minimo_s=float(por_evento.min()), desvio_s=float(por_evento.std()),\n                escopo='padronização dos atributos selecionados + predict; sem leitura de disco')"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 128,
+      "fim": 130,
+      "conteudo": "    escolhas = {'maior_f1': int(np.argmin(F[:, 0])), 'mais_compacta': int(np.argmin(F[:, 1])),\n                'mais_rapida': int(np.argmin(F[:, 2])),\n                'compromisso': int(np.argmin(np.linalg.norm(normal, axis=1)))}"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 148,
+      "fim": 155,
+      "conteudo": "    escolhas_path = pasta/'escolhas_antes_do_teste.json'\n    escolhas = escolher_solucoes(estado)\n    if escolhas_path.exists():\n        if json.loads(escolhas_path.read_text()) != escolhas:\n            raise ValueError('Escolhas de validação divergiram; eu não seleciono pelo teste.')\n    else:\n        salvar_json(escolhas_path, escolhas)\n    resultados = []"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 73,
+      "fim": 74,
+      "conteudo": "        sc = ax.scatter(x, erro, c=tempos, cmap='viridis', s=70, zorder=3)\n        ind = diag['indices']"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 85,
+      "fim": 87,
+      "conteudo": "        base = estado['baseline']\n        ax.scatter([base['k']], [base['objetivos'][0]], marker='X', s=100, c='#d97706', label='Baseline')\n        fig.colorbar(sc, ax=ax, label='Mediana de inferência (µs/evento em lote)')"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 17,
+      "fim": 26,
+      "conteudo": "def fronteira_2d(x, y):\n    \"\"\"Índices não dominados na projeção de dois objetivos minimizados.\"\"\"\n    x, y = np.asarray(x), np.asarray(y)\n    indices = []\n    melhor = float('inf')\n    for i in sorted(range(len(x)), key=lambda i: (x[i], y[i])):\n        if y[i] < melhor:\n            indices.append(i)\n            melhor = y[i]\n    return indices"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 39,
+      "fim": 41,
+      "conteudo": "    normal = (pontos-pontos.min(axis=0))/amplitude\n    ganhos = (1-normal.sum(axis=1))/np.sqrt(2)\n    i = int(np.argmax(ganhos))"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 95,
+      "fim": 101,
+      "conteudo": "        for ax, xx, yy, xlabel, ylabel in [\n            (axes[0], tempos, erro, 'µs/evento — menor é melhor', '1 − F1-macro — menor é melhor'),\n            (axes[1], x, tempos, 'Atributos — menor é melhor', 'µs/evento — menor é melhor')]:\n            ax.scatter(xx, yy)\n            for s, xi, yi in zip(sols, xx, yy):\n                ax.annotate(s['id'], (xi, yi), xytext=(4, 4), textcoords='offset points')\n            ax.set(xlabel=xlabel, ylabel=ylabel); ax.grid(alpha=.2)"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 17,
+      "fim": 23,
+      "conteudo": "def normalizar_hv(F, referencia_tempo):\n    \"\"\"Escala fixa, monotônica e limitada; nenhum tempo é cortado.\"\"\"\n    F = np.array(F, dtype=float, copy=True)\n    if referencia_tempo <= 0:\n        raise ValueError('Referência de tempo precisa ser positiva.')\n    F[:, 2] = F[:, 2] / (F[:, 2] + referencia_tempo)\n    return F"
+    },
+    {
+      "arquivo": "Modulos/busca_mlp.py",
+      "inicio": 97,
+      "fim": 99,
+      "conteudo": "        h = dict(geracao=int(alg.n_gen), avaliacoes=int(alg.evaluator.n_eval),\n                 hipervolume=float(HV(ref_point=np.array([1.1]*3))(normalizar_hv(F, ref_tempo))),\n                 solucoes=sols)"
+    },
+    {
+      "arquivo": "src/executar_experimento.py",
+      "inicio": 53,
+      "fim": 54,
+      "conteudo": "    tarefas=[(f'avaliacao_solucao_{i:02d}.json',['--pareto',pareto,'--solucao',i],m) for i,m in enumerate(dados['mascaras'])]\n    tarefas.append(('avaliacao_baseline.json',['--mascara','cheia'],[1]*len(dados['atributos'])))"
+    },
+    {
+      "arquivo": "src/executar_experimento_mlp.py",
+      "inicio": 78,
+      "fim": 82,
+      "conteudo": "            estado = executar_busca(avaliador, config, pasta,\n                                    ao_registrar=lambda e: gerar(e, pasta/'figuras', dados.meta))\n            gerar(estado, pasta/'figuras', dados.meta)\n            if etapa == 'busca':\n                return estado"
+    }
+  ]
+}

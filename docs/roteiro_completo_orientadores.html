@@ -1,0 +1,1351 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Roteiro dos experimentos para orientação</title><style>body{margin:0;background:#f5f6f8;color:#202b38;font:17px/1.65 system-ui,sans-serif}nav{position:fixed;top:0;bottom:0;left:0;width:260px;padding:22px;overflow:auto;background:#14283b;color:white}nav a{display:block;color:#d8e8f7;text-decoration:none;margin:9px 0;font-size:13px}nav .h1{font-size:16px;font-weight:bold}main{margin:0 0 0 304px;max-width:1060px;padding:40px;background:white}h1{font-size:32px;line-height:1.25}h2{font-size:27px;margin-top:65px;border-top:2px solid #e5ebf0;padding-top:18px}h3{font-size:21px;margin-top:36px}a{color:#075b92}img{max-width:100%;height:auto;border:1px solid #dce4eb}pre{overflow:auto;background:#f0f3f6;padding:18px;border-radius:6px;font:13px/1.55 monospace}code{font-family:monospace;overflow-wrap:anywhere}blockquote{margin:18px 0;border-left:4px solid #137ba8;padding:10px 20px;background:#edf7fc}table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow:auto;margin:20px 0}th,td{border:1px solid #dce4eb;padding:9px 12px;vertical-align:top}th{background:#eaf1f7;text-align:left}tr:nth-child(even){background:#fafbfc}.print{background:#075b92;color:white;border:0;padding:10px 18px;border-radius:4px;cursor:pointer}@media(max-width:1050px){nav{position:static;width:auto;max-height:260px}main{margin:0;padding:24px}}@media print{nav,.print{display:none}main{margin:0;max-width:none;padding:0}body{background:white;font-size:11px}h2{break-before:page;margin-top:0}pre{white-space:pre-wrap;font-size:9px}img{max-height:190mm;object-fit:contain}table{display:table;font-size:9px}blockquote,pre,tr{break-inside:avoid}a{color:inherit}}</style></head><body><nav aria-label="Sumário"><a class="h1" href="#secao-1">Roteiro para apresentar os experimentos de seleção de atributos</a><a class="h2" href="#secao-2">1 Como conduzir a reunião</a><a class="h2" href="#secao-3">2 Definição do problema e passagem para três objetivos</a><a class="h2" href="#secao-4">3 Dados utilizados e tratamentos</a><a class="h2" href="#secao-5">4 Como o NSGA-II representa e avalia uma solução</a><a class="h2" href="#secao-6">5 Protocolo da árvore de decisão e seu baseline</a><a class="h2" href="#secao-7">6 Resultados da árvore com duas bases</a><a class="h2" href="#secao-8">7 Resultados da árvore com três bases</a><a class="h2" href="#secao-9">8 Como explicar cada gráfico da árvore</a><a class="h2" href="#secao-10">9 Métricas que você precisa explicar sem decorar</a><a class="h2" href="#secao-11">10 Protocolo da MLP e divisão dos dados</a><a class="h2" href="#secao-12">11 Treinamento da MLP e baseline</a><a class="h2" href="#secao-13">12 Medição do terceiro objetivo e avaliação final planejada</a><a class="h2" href="#secao-14">13 Resultados parciais da MLP</a><a class="h2" href="#secao-15">14 Como explicar os gráficos da MLP</a><a class="h2" href="#secao-16">15 Como demonstrar o fluxo completo no código</a><a class="h2" href="#secao-17">16 Perguntas prováveis e respostas seguras</a><a class="h2" href="#secao-18">17 Fechamento sugerido e próximos passos</a><a class="h2" href="#secao-19">18 Ordem prática dos arquivos na tela</a><a class="h2" href="#secao-20">19 Comandos para conferir os arquivos durante a reunião</a><a class="h2" href="#secao-21">20 Glossário para preparar sua fala</a><a class="h2" href="#secao-22">21 Registro das fontes desta versão</a></nav><main><button class="print" onclick="window.print()">Imprimir ou salvar como PDF</button><h1 id="secao-1">Roteiro para apresentar os experimentos de seleção de atributos</h1>
+<p>Este roteiro acompanha a evolução de dois para três objetivos, as duas rodadas com árvore de decisão e a rodada com MLP. A finalidade é explicar cada escolha, localizar sua implementação e interpretar os resultados com segurança. As falas entre aspas são sugestões para você praticar com suas palavras.</p>
+<p><strong>Situação conferida em 15/10/2026:</strong> a árvore tem rodadas concluídas de 15 gerações com duas e três bases; os arquivos da MLP mostram resultado parcial na geração 53/100. Há gráficos de validação da MLP, mas não há <code>resultado_final.json</code>, <code>pareto_validacao.json</code>, <code>escolhas_antes_do_teste.json</code> ou <code>analise.concluida.json</code>. Esta constatação descreve os artefatos disponíveis, sem atestar se existe um processo de treinamento ativo.</p>
+<h2 id="secao-2">1 Como conduzir a reunião</h2>
+<p>Reserve aproximadamente 45 a 60 minutos. Use a sequência abaixo e deixe perguntas aprofundadas para o bloco correspondente.</p>
+<table>
+<thead>
+<tr>
+<th>Ordem</th>
+<th>Assunto</th>
+<th>Tempo sugerido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Pergunta da pesquisa e evolução dos objetivos</td>
+<td>5 min</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Dados, tratamentos e representação da solução</td>
+<td>8 min</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Árvore com duas e três bases</td>
+<td>10 min</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Leitura dos gráficos da árvore</td>
+<td>8 min</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Protocolo e implementação da MLP</td>
+<td>10 min</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Resultados parciais e gráficos da MLP</td>
+<td>8 min</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Limitações, próximos passos e perguntas</td>
+<td>5 min</td>
+</tr>
+</tbody>
+</table>
+<p>Se tiver apenas 15 minutos, apresente as seções 2, 6, 7, 10, 13 e 17. Use os recortes restantes para responder às perguntas.</p>
+<p>No VS Code, abra a pasta <code>multiobjective-ids-generalization</code>. Abra este Markdown e pressione <strong>Ctrl+Shift+V</strong> para visualizar o roteiro com figuras. Para demonstrar um código, use <strong>Ctrl+P</strong>, digite o caminho do arquivo e pressione Enter; depois use <strong>Ctrl+G</strong> e informe a linha indicada. Abra roteiro e código em grupos de editor lado a lado. Na versão HTML, as imagens aparecem no navegador e é possível imprimir em PDF.</p>
+<p><strong>Abertura sugerida:</strong></p>
+<blockquote>
+<p>“Minha pesquisa investiga a seleção de atributos para detecção de intrusão. Comecei procurando um compromisso entre desempenho de transferência entre bases e quantidade de atributos. Depois ampliei o protocolo para uma MLP treinada com dados das três bases e acrescentei o tempo de inferência como terceiro objetivo. Vou separar as etapas porque elas respondem a perguntas diferentes.”</p>
+</blockquote>
+<h2 id="secao-3">2 Definição do problema e passagem para três objetivos</h2>
+<h3>2.1 O que o modelo precisa aprender</h3>
+<p>Um registro representa um fluxo de rede. Os atributos descrevem esse fluxo, por exemplo quantidade de bytes, pacotes e flags TCP. O rótulo <code>Attack</code> informa a classe verdadeira, incluindo tráfego benigno e categorias de ataque. A tarefa implementada é <strong>classificação multiclasse supervisionada</strong>: aprender com exemplos rotulados e prever a classe de outros registros.</p>
+<p><code>X</code> é a tabela de atributos de entrada; <code>y</code> é o vetor de rótulos. Um <strong>atributo</strong> é uma coluna, uma <strong>amostra</strong> é uma linha e uma <strong>classe</strong> é um valor possível de <code>y</code>.</p>
+<p>O NSGA-II não é o classificador. Ele propõe seleções de colunas; a árvore ou a MLP é treinada para medir o valor de cada seleção. Os pesos internos da MLP são aprendidos pelo Adam, enquanto o NSGA-II procura quais atributos usar.</p>
+<h3>2.2 Os dois objetivos originais da árvore</h3>
+<p>Sendo <code>k</code> a quantidade selecionada e <code>d = 37</code> a quantidade candidata:</p>
+<pre><code class="language-text">f₁ = 1 − média dos F1-macro de todas as direções de transferência
+f₂ = k / d
+Minimizar f₁ e f₂
+</code></pre>
+<p><strong>Abra <a href="../Modulos/otimizacao.py#L109">Modulos/otimizacao.py, linha 109</a>.</strong> Recorte literal das linhas 109 a 113:</p>
+<pre><code class="language-python">        # Eu normalizo a quantidade de features como no código fornecido.
+        proporcao_features = numero_selecionadas / self.d
+
+        # Eu entrego ao pymoo os dois objetivos que ele deve minimizar.
+        out[&quot;F&quot;] = [1.0 - f1_cross_medio, proporcao_features]
+</code></pre>
+<p><strong>Explique o recorte:</strong> <code>numero_selecionadas / self.d</code> transforma a quantidade em proporção. <code>out[&quot;F&quot;]</code> entrega os dois valores ao otimizador. Como a biblioteca minimiza, converto o F1, que quero aumentar, em <code>1 − F1</code>, que quero diminuir. A média cross é calculada antes desse recorte a partir das métricas direcionais.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Na árvore, o primeiro objetivo resume o desempenho entre bases e o segundo mede a proporção de atributos usados. Não imponho antecipadamente uma soma com pesos para decidir uma solução única; busco alternativas de compromisso.”</p>
+</blockquote>
+<h3>2.3 Os três objetivos da MLP</h3>
+<pre><code class="language-text">f₁ = 1 − F1-macro na validação conjunta
+f₂ = k / d
+f₃ = mediana do tempo de padronização e previsão por evento
+Minimizar f₁, f₂ e f₃
+</code></pre>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L48">Modulos/busca_mlp.py, linha 48</a>.</strong> Recorte literal das linhas 48 a 51:</p>
+<pre><code class="language-python">            valor = dict(mascara=mascara.tolist(), k=k, treinamento=resumo,
+                         validacao=validacao, tempo=tempo,
+                         objetivos=[1-validacao['geral']['f1_macro'], k/self.dados.d,
+                                    tempo['mediana_s']])
+</code></pre>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L57">Modulos/busca_mlp.py, linha 57</a>.</strong> Recorte literal das linhas 57 a 68:</p>
+<pre><code class="language-python">class ProblemaMLP(ElementwiseProblem):
+    def __init__(self, avaliador):
+        self.avaliador = avaliador
+        super().__init__(n_var=avaliador.dados.d, n_obj=3, n_ieq_constr=1, xl=0., xu=1.)
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        mascara = (np.asarray(x) &gt;= .5).astype(int)
+        if not mascara.any():
+            out['F'], out['G'] = [1., 1., 1.], [1.]
+            return
+        out['F'] = self.avaliador.obter(mascara)['objetivos']
+        out['G'] = [-1.]
+</code></pre>
+<p><strong>Explique o recorte:</strong> <code>n_var</code> é o número de genes, <code>n_obj=3</code> declara os objetivos e <code>n_ieq_constr=1</code> declara uma restrição. <code>out['G'] &gt; 0</code> torna a máscara vazia inviável; <code>out['G'] = [-1.]</code> indica uma seleção válida. Na árvore, a máscara vazia recebe a penalização <code>[1, 1]</code>; na MLP, há também restrição explícita.</p>
+<p><strong>Por que acrescentar tempo:</strong> o número de atributos é uma medida de tamanho da entrada, mas não substitui uma medição de custo. Dois modelos podem ter quantidades distintas de atributos e tempos semelhantes, ou a ordem de rapidez pode se inverter.</p>
+<h3>2.4 O que mudou além do número de objetivos</h3>
+<table>
+<thead>
+<tr>
+<th>Aspecto</th>
+<th>Árvore</th>
+<th>MLP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pergunta central</td>
+<td>Transferência entre bases distintas</td>
+<td>Classificação de registros reservados das três bases participantes</td>
+</tr>
+<tr>
+<td>Treinamento cross/conjunto</td>
+<td>Treina na origem e avalia no destino, por direção</td>
+<td>Reúne as partes de treino das três bases</td>
+</tr>
+<tr>
+<td>Desempenho na busca</td>
+<td>Média dos F1 direcionais, com pesos iguais por direção</td>
+<td>F1-macro da validação unida</td>
+</tr>
+<tr>
+<td>Objetivos</td>
+<td>Erro cross e proporção de atributos</td>
+<td>Erro de validação, proporção de atributos e tempo</td>
+</tr>
+<tr>
+<td>Gerações configuradas</td>
+<td>15</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td>Árvore com 37 atributos</td>
+<td>MLP com 37 atributos</td>
+</tr>
+<tr>
+<td>Reserva final independente da seleção</td>
+<td>Sem base externa reservada nessas rodadas</td>
+<td>Partição de teste, acessada após fixar escolhas</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“A MLP representa um novo protocolo. Além de acrescentar tempo, alterei o treinamento e a avaliação. Por isso, um F1 maior na MLP não comprova que a arquitetura superou a árvore no mesmo problema.”</p>
+</blockquote>
+<h2 id="secao-4">3 Dados utilizados e tratamentos</h2>
+<h3>3.1 Bases e rodadas</h3>
+<table>
+<thead>
+<tr>
+<th>Rodada</th>
+<th>Bases</th>
+<th>Direções cross</th>
+<th>Configuração</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Árvore inicial</td>
+<td>NF-UNSW-NB15-v2 e NF-ToN-IoT-v2</td>
+<td>2</td>
+<td><code>src/config.yaml</code></td>
+</tr>
+<tr>
+<td>Árvore ampliada</td>
+<td>As duas anteriores e NF-CSE-CIC-IDS2018-v2</td>
+<td>6</td>
+<td><code>src/config_tres_datasets.yaml</code></td>
+</tr>
+<tr>
+<td>MLP conjunta</td>
+<td>As três bases</td>
+<td>Não usa transferências direcionais como objetivo</td>
+<td><code>src/config_mlp_conjunto.yaml</code></td>
+</tr>
+</tbody>
+</table>
+<p>Com <code>n</code> bases há <code>n × (n − 1)</code> transferências direcionais. A→B e B→A são avaliações diferentes, pois mudam o treinamento e o destino.</p>
+<table>
+<thead>
+<tr>
+<th>Base</th>
+<th>Registros originais</th>
+<th>Removidos</th>
+<th>Válidos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNSW-NB15</td>
+<td>1986745</td>
+<td>0</td>
+<td>1986745</td>
+</tr>
+<tr>
+<td>ToN-IoT</td>
+<td>13135881</td>
+<td>131</td>
+<td>13135750</td>
+</tr>
+<tr>
+<td>CSE-CIC-IDS2018</td>
+<td>18893708</td>
+<td>253</td>
+<td>18893455</td>
+</tr>
+</tbody>
+</table>
+<p>As contagens acima constam tanto de <code>Resultados/tres_datasets_v1/checkpoints/dados_preprocessamento.json</code> quanto do resumo de preparação da MLP. Os executáveis usam todos os registros válidos; o subconjunto do benchmark da MLP serve somente para medir tempo. A MLP reúne <strong>34.015.950 registros válidos</strong>, 37 atributos e 31 rótulos no vocabulário conjunto.</p>
+<h3>3.2 Leitura dos dados</h3>
+<p><strong>Abra <a href="../Modulos/carregamento.py#L88">Modulos/carregamento.py, linha 88</a>.</strong> Recorte literal das linhas 88 a 89:</p>
+<pre><code class="language-python">        if nrows is None:
+            df = pd.read_parquet(caminho, columns=colunas_leitura)
+</code></pre>
+<p><strong>Explique:</strong> não há limite de linhas nesse ramo. O carregador da árvore pode deixar de ler portas, TTL e <code>Label</code> porque já seriam descartados. A MLP lê os Parquets em lotes para controlar o uso de memória, em <code>Modulos/dados_mlp.py</code>, função <code>preparar</code>.</p>
+<h3>3.3 Remoção de valores inválidos</h3>
+<p><strong>Abra <a href="../Modulos/preprocessamento.py#L27">Modulos/preprocessamento.py, linha 27</a>.</strong> Recorte literal das linhas 27 a 42:</p>
+<pre><code class="language-python">    limite_float32 = np.finfo(np.float32).max
+    linhas_validas = np.ones(len(df), dtype=bool)
+
+    # Eu percorro uma coluna por vez para não criar uma segunda matriz com
+    # milhões de linhas somente para verificar os limites numéricos.
+    for coluna in df.columns:
+        serie = df[coluna]
+        if is_numeric_dtype(serie.dtype):
+            valores = serie.to_numpy(copy=False)
+            linhas_validas &amp;= np.isfinite(valores)
+            linhas_validas &amp;= valores &lt;= limite_float32
+            linhas_validas &amp;= valores &gt;= -limite_float32
+        else:
+            linhas_validas &amp;= serie.notna().to_numpy()
+
+    return df.loc[linhas_validas].reset_index(drop=True)
+</code></pre>
+<p><strong>Explique passo a passo:</strong> começa supondo todas as linhas válidas; em cada coluna verifica valores finitos e representáveis em <code>float32</code>; nas colunas não numéricas verifica ausências; mantém somente as linhas que passaram em todas as verificações. Não há imputação nesse fluxo.</p>
+<p>Na MLP, o filtro é aplicado aos atributos candidatos comuns e ao rótulo, durante a leitura em lotes:</p>
+<p><strong>Abra <a href="../Modulos/dados_mlp.py#L86">Modulos/dados_mlp.py, linha 86</a>.</strong> Recorte literal das linhas 86 a 92:</p>
+<pre><code class="language-python">            numericos = df[atributos].to_numpy(dtype=np.float64)
+            rotulos = df[pre['coluna_rotulo']].astype('string').str.strip().str.casefold()
+            ok = (np.isfinite(numericos).all(axis=1)
+                  &amp; (np.abs(numericos) &lt;= np.finfo(np.float32).max).all(axis=1)
+                  &amp; rotulos.notna().to_numpy() &amp; rotulos.ne('').fillna(False).to_numpy())
+            X = numericos[ok].astype('float32')
+            X[X == 0] = 0  # Eu unifico +0 e -0 na identificação das duplicatas.
+</code></pre>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Removo entradas numericamente inválidas antes do treinamento e registro quantas foram removidas. Trabalhar em lotes muda a forma de carregar os dados, mas não significa subamostrar os exemplos do treinamento.”</p>
+</blockquote>
+<h3>3.4 Exclusão de colunas e normalização dos rótulos</h3>
+<p><strong>Abra <a href="../src/config_mlp_conjunto.yaml#L13">src/config_mlp_conjunto.yaml, linha 13</a>.</strong> Recorte literal das linhas 13 a 16:</p>
+<pre><code class="language-yaml">preprocessamento:
+  atributos_vazamento: [L4_SRC_PORT, L4_DST_PORT, MIN_TTL, MAX_TTL]
+  coluna_rotulo: Attack
+  coluna_binaria: Label
+</code></pre>
+<p><strong>Abra <a href="../Modulos/preprocessamento.py#L62">Modulos/preprocessamento.py, linha 62</a>.</strong> Recorte literal das linhas 62 a 68:</p>
+<pre><code class="language-python">    y = df[coluna_rotulo].astype(&quot;string&quot;).str.strip().str.casefold()
+    X = df.drop(columns=[c for c in (coluna_rotulo, coluna_binaria) if c in df.columns])
+    # Garanto matriz exclusivamente numérica: qualquer coluna não numérica
+    # remanescente (ex.: identificador esquecido) é descartada com aviso
+    # implícito via lista de colunas resultante.
+    X = X.select_dtypes(include=[np.number])
+    return X, y
+</code></pre>
+<p><code>Attack</code> é o alvo. <code>Label</code> é outro rótulo e precisa ficar fora de <code>X</code> para evitar vazamento direto. Portas e TTL são excluídos por serem possíveis atalhos associados ao cenário de captura. Essa decisão reduz esse risco específico; ela não demonstra ausência de todo vazamento.</p>
+<p><code>str.strip()</code> remove espaços nas extremidades; <code>str.casefold()</code> uniformiza capitalização. Isso aproxima <code>DoS</code> de <code>dos</code>, mas não equivale a harmonizar semanticamente todas as taxonomias. <code>dos</code> e <code>dos attacks-hulk</code>, por exemplo, continuam categorias diferentes.</p>
+<h3>3.5 Mesmos atributos e mesma ordem</h3>
+<p><strong>Abra <a href="../Modulos/preprocessamento.py#L103">Modulos/preprocessamento.py, linha 103</a>.</strong> Recorte literal das linhas 103 a 113:</p>
+<pre><code class="language-python">    colunas_comuns = None
+    for X, _ in bases_Xy.values():
+        cols = set(X.columns)
+        colunas_comuns = cols if colunas_comuns is None else (colunas_comuns &amp; cols)
+
+    # Ordem determinística (ordem de aparição na primeira base) para a
+    # máscara ser reprodutível entre execuções
+    primeira = next(iter(bases_Xy.values()))[0]
+    ordem = [c for c in primeira.columns if c in colunas_comuns]
+
+    return {nome: (X[ordem].copy(), y) for nome, (X, y) in bases_Xy.items()}, ordem
+</code></pre>
+<p><strong>Explique:</strong> faz a interseção das colunas e preserva a ordem da primeira base. Sem essa etapa, a terceira posição da máscara poderia significar atributos diferentes em cada dataset. A MLP também calcula a interseção, pelos schemas dos Parquets, em <code>preparar</code>.</p>
+<h2 id="secao-5">4 Como o NSGA-II representa e avalia uma solução</h2>
+<h3>4.1 Máscara de seleção</h3>
+<p>Exemplo didático com quatro atributos, que não representa uma solução real salva:</p>
+<pre><code class="language-text">Atributos: [IN_BYTES, IN_PKTS, OUT_BYTES, TCP_FLAGS]
+Genes:     [0,80,     0,20,    0,60,      0,10]
+Máscara:   [1,        0,       1,         0]
+Resultado: selecionar IN_BYTES e OUT_BYTES; k = 2
+</code></pre>
+<p><strong>Abra <a href="../Modulos/otimizacao.py#L59">Modulos/otimizacao.py, linha 59</a>.</strong> Recorte literal das linhas 59 a 67:</p>
+<pre><code class="language-python">    def decidir_features_mantidas(self, x):
+        &quot;&quot;&quot;Eu devolvo os índices cujos genes atingiram o limiar de 0,5.&quot;&quot;&quot;
+        return np.where(np.asarray(x) &gt;= 0.5)[0]
+
+    def criar_mascara_binaria(self, x):
+        &quot;&quot;&quot;Eu converto os genes contínuos para a máscara usada nas bases.&quot;&quot;&quot;
+        mascara = np.zeros(self.d, dtype=int)
+        mascara[self.decidir_features_mantidas(x)] = 1
+        return mascara
+</code></pre>
+<p><strong>Explique:</strong> os genes são valores contínuos entre zero e um. O limiar 0,5 transforma os genes em decisões de manter ou remover. Portanto, a implementação usa o NSGA-II com genes contínuos convertidos em máscaras; não configura operadores binários especializados. Genes diferentes podem produzir a mesma máscara, e o cache evita repetir avaliações dessa seleção.</p>
+<h3>4.2 Dominância e fronteira</h3>
+<p>Uma solução A domina B se A é pelo menos tão boa em todos os objetivos e estritamente melhor em pelo menos um. Na minimização, isso significa valores menores ou iguais em todos e menor em algum. Se A usa menos atributos mas tem erro maior, pode haver um compromisso, sem dominância.</p>
+<p>O NSGA-II classifica a população em frentes de não dominância e usa diversidade para escolher sobreviventes. Cruzamento e mutação geram novos candidatos. O código usa os operadores padrão da biblioteca; configurei explicitamente população, gerações e seed. Não avalio exaustivamente todas as combinações: com 37 atributos, há <code>2³⁷ − 1 = 137.438.953.471</code> máscaras não vazias.</p>
+<p><strong>Abra <a href="../Modulos/otimizacao.py#L140">Modulos/otimizacao.py, linha 140</a>.</strong> Recorte literal das linhas 140 a 140:</p>
+<pre><code class="language-python">    algoritmo = NSGA2(pop_size=n_pop)
+</code></pre>
+<p><strong>Abra <a href="../Modulos/otimizacao.py#L150">Modulos/otimizacao.py, linha 150</a>.</strong> Recorte literal das linhas 150 a 158:</p>
+<pre><code class="language-python">    res = minimize(
+        problema,
+        algoritmo,
+        (&quot;n_gen&quot;, n_gen),
+        seed=seed,
+        verbose=verbose,
+        save_history=False,
+        **kwargs_minimize,
+    )
+</code></pre>
+<p><code>(&quot;n_gen&quot;, n_gen)</code> configura a parada por gerações. A seed controla os sorteios, mas uma única seed não mede estabilidade entre execuções. A fronteira final contém os compromissos encontrados e sobreviventes nessa execução; não prova que contém o ótimo global ou todas as soluções não dominadas já visitadas.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“O algoritmo devolve um conjunto de opções. Para escolher uma delas, ainda preciso explicitar minha preferência entre desempenho, tamanho e, no novo protocolo, tempo.”</p>
+</blockquote>
+<h2 id="secao-6">5 Protocolo da árvore de decisão e seu baseline</h2>
+<h3>5.1 Classificador</h3>
+<p><strong>Abra <a href="../Modulos/classificadores.py#L15">Modulos/classificadores.py, linha 15</a>.</strong> Recorte literal das linhas 15 a 19:</p>
+<pre><code class="language-python">        return DecisionTreeClassifier(
+            max_depth=8,
+            class_weight=&quot;balanced&quot;,
+            random_state=seed,
+        )
+</code></pre>
+<p><code>max_depth=8</code> limita a profundidade da árvore. <code>class_weight=&quot;balanced&quot;</code> aumenta a influência relativa de classes menos frequentes no treinamento. <code>random_state=seed</code> fixa o estado aleatório. A árvore aprende comparações de limiares; o pipeline utiliza os valores originais, sem padronização.</p>
+<h3>5.2 Avaliação cross durante a busca</h3>
+<p><strong>Abra <a href="../Modulos/avaliacao.py#L129">Modulos/avaliacao.py, linha 129</a>.</strong> Recorte literal das linhas 129 a 154:</p>
+<pre><code class="language-python">    for nome_i in nomes:
+        for nome_j in nomes:
+            if nome_i == nome_j:
+                continue
+            X_i, y_i = bases_Xy[nome_i]
+            X_j, y_j = bases_Xy[nome_j]
+
+            X_tr = aplicar_mascara(X_i, mascara)
+            X_te = aplicar_mascara(X_j, mascara)
+
+            # Eu uso exatamente as features selecionadas, sem reescalonar.
+            classes_treino = np.unique(y_i)
+            modelo = criar_classificador(nome_clf, seed=seed)
+            _treinar(modelo, X_tr, _codificar_rotulos(y_i, classes_treino))
+
+            # Tempo médio de inferência POR AMOSTRA (linha 12)
+            inicio = time.perf_counter()
+            y_pred = _prever(modelo, X_te)
+            duracao = time.perf_counter() - inicio
+            tempos_inferencia.append(duracao / max(len(X_te), 1))
+
+            y_te_cod = _codificar_rotulos(y_j, classes_treino)
+            f1 = f1_score(y_te_cod, y_pred, average=&quot;macro&quot;, zero_division=0)
+
+            # Registro por direção de transferência (linha 9)
+            resultados[f&quot;{nome_i}-&gt;{nome_j}&quot;] = float(f1)
+</code></pre>
+<p><strong>Explique o fluxo:</strong> percorre pares de bases; pula a mesma origem e destino; aplica a mesma máscara nas duas; treina com todos os exemplos válidos da origem; prevê o destino; registra o F1 de cada direção. Os dois objetivos usam a média desses F1 e <code>k/d</code>.</p>
+<p>O tempo já era <strong>medido e registrado</strong> na árvore, mas <strong>não integrava o vetor de objetivos</strong>. A inclusão do terceiro objetivo na MLP transforma uma medida complementar em critério efetivamente otimizado.</p>
+<h3>5.3 Avaliação detalhada dentro de cada base</h3>
+<p><strong>Abra <a href="../Modulos/avaliacao.py#L79">Modulos/avaliacao.py, linha 79</a>.</strong> Recorte literal das linhas 79 a 79:</p>
+<pre><code class="language-python">    skf = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=seed)
+</code></pre>
+<p>Validação cruzada estratificada com cinco folds: divide a base em cinco partes, preservando aproximadamente a distribuição de classes; treina em quatro e avalia na restante; repete até cada parte ter sido avaliada. O F1 intra é a média dos cinco resultados. As barras de erro nas figuras são o <strong>desvio padrão entre folds</strong>, calculado com <code>ddof=1</code>, e não intervalos de confiança.</p>
+<p>Essa etapa é feita para as soluções finais e para o baseline. Não é executada para cada indivíduo da busca porque o F1 intra não faz parte dos dois objetivos.</p>
+<h3>5.4 De onde vem o baseline da árvore</h3>
+<p><strong>Abra <a href="../src/algoritmo2_avaliacao.py#L66">src/algoritmo2_avaliacao.py, linha 66</a>.</strong> Recorte literal das linhas 66 a 68:</p>
+<pre><code class="language-python">    if args.mascara == &quot;cheia&quot;:
+        # Baseline: todos os atributos selecionados (k(x) = d)
+        return [(0, np.ones(d, dtype=int))]
+</code></pre>
+<p><strong>Resposta pronta ao orientador:</strong></p>
+<blockquote>
+<p>“O baseline é uma referência experimental calculada pelo meu código: a mesma árvore com todos os 37 atributos candidatos após os tratamentos. Uso os mesmos parâmetros e a mesma avaliação das soluções selecionadas. Ele permite examinar o efeito da seleção em relação ao uso do conjunto completo.”</p>
+</blockquote>
+<p>O baseline tem F1 intra e F1 em cada transferência; sua média cross depende das direções incluídas. Não é uma referência numérica externa importada de artigo, nem uma segunda arquitetura.</p>
+<h3>5.5 Classes do destino ausentes no treino</h3>
+<p><strong>Abra <a href="../Modulos/avaliacao.py#L68">Modulos/avaliacao.py, linha 68</a>.</strong> Recorte literal das linhas 68 a 69:</p>
+<pre><code class="language-python">    indice = {c: i for i, c in enumerate(classes)}
+    return np.array([indice.get(v, -1) for v in y])
+</code></pre>
+<p>No cross, a codificação usa as classes da origem. Categorias do destino que não existem na origem recebem <code>-1</code>. O modelo não aprendeu a prever <code>-1</code>; por isso essas amostras não são acertadas nessa implementação. O F1 agrega categorias desconhecidas em um único código, e não calcula um F1 separado para cada categoria desconhecida original.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Parte da dificuldade decorre de classes que não aparecem no treinamento da origem. Também há erros em classes conhecidas, mas essa separação não identifica sozinha a causa desses erros. Para afirmar mudança de distribuição como causa, eu precisaria de análise adicional.”</p>
+</blockquote>
+<h2 id="secao-7">6 Resultados da árvore com duas bases</h2>
+<p>Fonte do Pareto: <code>Resultados/pareto/pareto_20260907_000921_decision_tree.json</code>. O nome identifica o início da execução; não deve ser interpretado automaticamente como data de término.</p>
+<p>Configuração: população 24, 15 gerações e seed 42. Há uma solução final única após remover máscaras repetidas e duas avaliações detalhadas no pacote: solução e baseline.</p>
+<table>
+<thead>
+<tr>
+<th>Alternativa</th>
+<th>Atributos</th>
+<th>UNSW→ToN</th>
+<th>ToN→UNSW</th>
+<th>F1 cross médio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline</td>
+<td>37</td>
+<td>0,016712</td>
+<td>0,077545</td>
+<td>0,047128</td>
+</tr>
+<tr>
+<td>S1</td>
+<td>3</td>
+<td>0,054537</td>
+<td>0,079990</td>
+<td>0,067264</td>
+</tr>
+</tbody>
+</table>
+<p>S1 utiliza <code>SERVER_TCP_FLAGS</code>, <code>TCP_WIN_MAX_IN</code> e <code>DNS_QUERY_ID</code>. A redução é de 91,89%, calculada por <code>100 × (1 − 3/37)</code>.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Nesta rodada, encontrei uma seleção de três atributos cuja média cross foi superior ao baseline com 37. A redução é expressiva, mas os F1 absolutos continuam baixos e os dados de transferência participaram da seleção. Apresento isso como resultado exploratório de seleção, sem tratá-lo como avaliação externa independente.”</p>
+</blockquote>
+<p>O hipervolume aumentou de <strong>0,100282 para 0,170428</strong>. Ainda cresceu aproximadamente <strong>0,003375 na última geração</strong>; terminar 15 gerações não demonstra estabilização.</p>
+<p><img src="../Resultados/figuras/orientadores_final/01_pareto.png" alt="Pareto da árvore com duas bases" /></p>
+<p><strong>Leitura:</strong> horizontal = quantidade de atributos, menor é melhor; vertical = F1 cross médio, maior é melhor. Pontos cinza são máscaras do cache; o azul identifica a fronteira da geração salva. Uma única solução na fronteira final não implica que exista somente uma seleção útil entre todas as combinações possíveis.</p>
+<h2 id="secao-8">7 Resultados da árvore com três bases</h2>
+<p>Fonte: <code>Resultados/tres_datasets_v1/pareto/pareto_20260910_053058_decision_tree.json</code>. Mantém população 24, 15 gerações e seed 42. A nova busca incorpora seis transferências e produz quatro soluções finais distintas, com cinco avaliações detalhadas incluindo o baseline.</p>
+<table>
+<thead>
+<tr>
+<th>Alternativa</th>
+<th>Atributos</th>
+<th>Redução</th>
+<th>F1 cross médio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline</td>
+<td>37</td>
+<td>0,00%</td>
+<td>0,035290</td>
+</tr>
+<tr>
+<td>S1</td>
+<td>7</td>
+<td>81,08%</td>
+<td>0,046460</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>8</td>
+<td>78,38%</td>
+<td>0,058466</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>11</td>
+<td>70,27%</td>
+<td>0,058526</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>12</td>
+<td>67,57%</td>
+<td>0,061615</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Como explicar:</strong> S1 é a mais compacta; S4 tem a maior média cross entre as quatro; S2 usa oito atributos e fica muito próxima do desempenho médio de S3, com onze. S2 e S3 não são idênticas: a diferença numérica de F1 é pequena, mas positiva para S3. O ganho de S4 sobre o baseline é aproximadamente <strong>0,026324 na escala de F1</strong>, sem estabelecer significância estatística.</p>
+<h3>7.1 Por que abrir as direções em vez de mostrar somente a média</h3>
+<table>
+<thead>
+<tr>
+<th>Direção</th>
+<th>Baseline</th>
+<th>S2 com 8 atributos</th>
+<th>S4 com 12 atributos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNSW-NB15-&gt;ToN-IoT</td>
+<td>0,016712</td>
+<td>0,023226</td>
+<td>0,068919</td>
+</tr>
+<tr>
+<td>UNSW-NB15-&gt;CSE-CIC-IDS2018</td>
+<td>0,016091</td>
+<td>0,084913</td>
+<td>0,096281</td>
+</tr>
+<tr>
+<td>ToN-IoT-&gt;UNSW-NB15</td>
+<td>0,077545</td>
+<td>0,079008</td>
+<td>0,055070</td>
+</tr>
+<tr>
+<td>ToN-IoT-&gt;CSE-CIC-IDS2018</td>
+<td>0,030505</td>
+<td>0,049755</td>
+<td>0,031116</td>
+</tr>
+<tr>
+<td>CSE-CIC-IDS2018-&gt;UNSW-NB15</td>
+<td>0,058885</td>
+<td>0,085746</td>
+<td>0,085172</td>
+</tr>
+<tr>
+<td>CSE-CIC-IDS2018-&gt;ToN-IoT</td>
+<td>0,012004</td>
+<td>0,028148</td>
+<td>0,033129</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“S4 apresenta a maior média, mas perde para o baseline na direção ToN→UNSW. S2 supera numericamente o baseline nas seis direções desta execução. Logo, escolher só pela média esconde uma perda importante e a preferência depende da finalidade do detector.”</p>
+</blockquote>
+<h3>7.2 Desempenho dentro e fora das bases</h3>
+<table>
+<thead>
+<tr>
+<th>Base</th>
+<th>F1 intra baseline</th>
+<th>F1 intra S4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NF-UNSW-NB15-v2</td>
+<td>0,472851</td>
+<td>0,407256</td>
+</tr>
+<tr>
+<td>NF-ToN-IoT-v2</td>
+<td>0,719982</td>
+<td>0,651292</td>
+</tr>
+<tr>
+<td>NF-CSE-CIC-IDS2018-v2</td>
+<td>0,619720</td>
+<td>0,572915</td>
+</tr>
+</tbody>
+</table>
+<p>S4 melhora a média cross, mas reduz o F1 intra nas três bases em comparação com o baseline. Isso evidencia um compromisso. Intra e cross também diferem no vocabulário de classes considerado, portanto a diferença não mede isoladamente uma mudança de distribuição.</p>
+<h2 id="secao-9">8 Como explicar cada gráfico da árvore</h2>
+<p>Os pacotes ficam em <code>Resultados/figuras/orientadores_final/</code> para duas bases e <code>Resultados/tres_datasets_v1/figuras/</code> para três. Ambos são gerados por <code>src/relatorio_orientadores.py</code>, função <code>gerar</code>, e têm a mesma família de figuras. Os exemplos abaixo usam três bases.</p>
+<h3>8.1 Hipervolume e evolução da busca</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/00_convergencia_hipervolume.png" alt="Hipervolume da árvore com três bases" /></p>
+<p><strong>Como ler:</strong> horizontal = geração; painel superior = hipervolume da frente sobrevivente; painel inferior = diferença entre gerações consecutivas. Maior hipervolume significa melhor cobertura dos compromissos considerando a referência fixa, não porcentagem de acerto.</p>
+<p>O hipervolume mede a região dominada pelas soluções até um ponto de referência pior, aqui <code>(1,1; 1,1)</code> em notação decimal portuguesa, correspondente a <code>[1.1, 1.1]</code> no Python. É calculado com os objetivos de minimização, mesmo que o Pareto seja desenhado em F1 crescente.</p>
+<p>Na árvore com três bases, vai de <strong>0,106119 para 0,146452</strong> e a última variação é aproximadamente <strong>+0,000254</strong>. A curva não sustenta afirmar convergência comprovada.</p>
+<p><strong>Abra <a href="../src/diagnostico_nsga2.py#L35">src/diagnostico_nsga2.py, linha 35</a>.</strong> Recorte literal das linhas 35 a 41:</p>
+<pre><code class="language-python">    def registrar(alg):
+        F = np.atleast_2d(alg.opt.get('F'))
+        mascaras = (np.atleast_2d(alg.opt.get('X')) &gt;= .5).astype(int)
+        historico.append(dict(geracao=int(alg.n_gen), avaliacoes=int(alg.evaluator.n_eval),
+                              hipervolume=float(hv(F)),
+                              solucoes_unicas=len(np.unique(mascaras, axis=0)),
+                              objetivos=F.tolist(), mascaras=mascaras.tolist()))
+</code></pre>
+<p>O histórico da árvore foi reconstruído por replay com cache somente leitura, e o código confere a fronteira reconstruída contra a salva. Não houve novo treinamento para obter essa curva. O valor é da população sobrevivente por geração, não de um arquivo acumulado de todos os pontos. Pode oscilar. Não compare numericamente HV de duas e três bases como se a tarefa fosse a mesma.</p>
+<h3>8.2 Pareto de desempenho e quantidade de atributos</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/01_pareto.png" alt="Pareto da árvore com três bases" /></p>
+<p><strong>Leia em voz alta:</strong> “Cada ponto azul é uma seleção final: S1 tem sete atributos e F1 médio 0,046460; S4 tem doze e F1 médio 0,061615. Ir para a esquerda reduz atributos; ir para cima aumenta F1. As opções trocam compactação por desempenho.”</p>
+<p><strong>Abra <a href="../src/relatorio_orientadores.py#L174">src/relatorio_orientadores.py, linha 174</a>.</strong> Recorte literal das linhas 174 a 182:</p>
+<pre><code class="language-python">        ax.scatter([c['numero_atributos'] for c in cache],
+                   [np.mean(list(c['f1_macro_cross_por_direcao'].values())) for c in cache],
+                   color='#94a3b8', alpha=.45, s=25, label=f&quot;Máscaras avaliadas no cache ({len(cache)})&quot;)
+        ax.plot(ks,f1s,'o-',color='#0369a1',label='Fronteira da geração registrada')
+        for s,k,f in zip(sols,ks,f1s):
+            ax.annotate(s['id'],(k,f),xytext=(5,8),textcoords='offset points')
+        ax.set(xlabel=f'Número de atributos selecionados (de {d})',ylabel='Média do F1-macro cross em todas as direções',
+               title='Compromisso entre parcimônia e desempenho cross-dataset')
+        ax.grid(alpha=.2); ax.legend(loc='lower right'); salvar(fig,'01_pareto')
+</code></pre>
+<p><strong>Explique:</strong> cinza são avaliações no cache e azul é a fronteira da geração registrada. O cache não é a frente final: um ponto cinza pode ter sido avaliado e não sobrevivido. O baseline não é explicitamente marcado como ponto identificado nesse Pareto; a comparação com ele está nas métricas e em <code>06_intra_vs_cross</code>.</p>
+<p>Os segmentos só unem pontos para facilitar leitura. Não são uma curva ajustada, não mostram soluções intermediárias medidas e não provam que toda a região da figura foi explorada.</p>
+<h3>8.3 Revisão dos eixos e candidato a joelho</h3>
+<p><img src="../Resultados/revisao_pareto_anterior/comparacao_eixos.png" alt="Mesmos resultados da árvore em F1 e em um menos F1" /></p>
+<p>À esquerda está F1: melhorar significa subir. À direita está <code>1 − F1</code>: melhorar significa descer. A seleção e seus resultados são os mesmos; a transformação muda o sentido do eixo, sem corrigir ou alterar o algoritmo. A escala vertical detalhada realça diferenças pequenas e precisa ser mencionada.</p>
+<p><strong>Candidato a joelho:</strong> S2, com oito atributos, tem o maior desvio em direção à origem em relação à reta entre extremos, após normalizar os eixos. É uma leitura geométrica de compromisso, não prova de ótimo ou escolha automática. Código: <code>src/revisar_pareto_anterior.py</code>, função <code>main</code>, chamando <code>diagnosticar_curvatura</code> de <code>src/relatorio_mlp.py</code>.</p>
+<h3>8.4 F1 por direção</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/02_f1_por_direcao.png" alt="F1 por direção na árvore" /></p>
+<p><strong>Como ler:</strong> cada grupo é uma solução; cada cor é uma direção origem→destino; altura = F1-macro. Use a tabela da seção 7.1 para apontar a perda de S4 em ToN→UNSW. Não confunda a cor com classe de ataque.</p>
+<p><strong>Abra <a href="../src/relatorio_orientadores.py#L187">src/relatorio_orientadores.py, linha 187</a>.</strong> Recorte literal das linhas 187 a 190:</p>
+<pre><code class="language-python">        for j,direcao in enumerate(dirs):
+            vals=[s['f1_macro_cross_por_direcao'][direcao] for s in sols]
+            bars=ax.bar(x+(j-(len(dirs)-1)/2)*largura,vals,largura,label=curto(direcao),color=plt.get_cmap('tab10')(j))
+            ax.bar_label(bars,fmt='%.4f',padding=4,fontsize=9)
+</code></pre>
+<h3>8.5 Partição do erro por grupos de classes</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/03_erro_por_grupo.png" alt="Erro por grupos na árvore" /></p>
+<p><strong>Como ler:</strong> um painel por solução; horizontal = transferências; vertical = fração das amostras no destino. Roxo indica exemplos de classes ausentes no treinamento da origem. Laranja indica exemplos classificados incorretamente entre as classes presentes na origem, ponderados pela fração conhecida.</p>
+<p><strong>Abra <a href="../src/relatorio_orientadores.py#L212">src/relatorio_orientadores.py, linha 212</a>.</strong> Recorte literal das linhas 212 a 214:</p>
+<pre><code class="language-python">                p = info['prop_desconhecidas']
+                desconhecidas.append(p)
+                erros.append((1-p)*(1-info['acuracia_classes_conhecidas']))
+</code></pre>
+<p>Se <code>p</code> é a fração desconhecida e <code>a</code> a acurácia nas conhecidas, o total empilhado é <code>p + (1 − p) × (1 − a)</code>. Isso descreve a taxa de erro por amostra nessa avaliação. <strong>Não é uma decomposição de <code>1 − F1</code>.</strong> O complemento até 1 representa os acertos nas classes conhecidas. Roxo não deve ser apresentado como classe “detectada como desconhecida”: o modelo não implementa rejeição de classes desconhecidas.</p>
+<p>Existe linguagem antiga no cabeçalho de <code>src/graficos_cross.py</code> associando parcelas a causas. Para a apresentação, use a fórmula e a leitura acima: erros em classes conhecidas não isolam causalmente domain shift. O gerador atual é <code>src/relatorio_orientadores.py</code>.</p>
+<h3>8.6 Atributos selecionados</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/04_atributos.png" alt="Atributos selecionados na árvore" /></p>
+<p><strong>Como ler:</strong> linhas = soluções; colunas = atributos presentes em pelo menos uma seleção; azul = selecionado, claro = ausente. Atributos nunca selecionados não aparecem nessa figura. Frequência de seleção não é importância causal e não substitui uma análise específica de importância.</p>
+<p><strong>Abra <a href="../src/relatorio_orientadores.py#L236">src/relatorio_orientadores.py, linha 236</a>.</strong> Recorte literal das linhas 236 a 238:</p>
+<pre><code class="language-python">        selecao=np.array([s['mascara'] for s in sols])
+        indices=np.where(selecao.any(axis=0))[0]
+        ax.imshow(selecao[:,indices],cmap='Blues',vmin=0,vmax=1,aspect='auto')
+</code></pre>
+<h3>8.7 Matrizes de confusão</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/05_matriz_NF-UNSW-NB15-v2_para_NF-ToN-IoT-v2.png" alt="Matriz da solução compacta treinada em UNSW e avaliada em ToN" /></p>
+<p><strong>Como ler em quatro passos:</strong> identifique a solução no título; identifique a direção; escolha uma linha que representa uma classe verdadeira; percorra as colunas para ver as classes previstas. O valor da diagonal normalizada é o recall daquela classe. Se uma célula diagonal vale <code>0,80</code>, 80% dos exemplos daquela classe foram reconhecidos corretamente.</p>
+<p>Nos pacotes da árvore, as matrizes são da <strong>S1, a mais compacta</strong>: três atributos na rodada de duas bases e sete na rodada de três. Não são da S4 ou do baseline. A coluna “sem correspondência” reúne previsões cuja classe de origem não pertence ao vocabulário do destino; isso é diferente do código <code>-1</code> atribuído ao rótulo verdadeiro desconhecido na métrica cross.</p>
+<p><strong>Abra <a href="../src/relatorio_orientadores.py#L247">src/relatorio_orientadores.py, linha 247</a>.</strong> Recorte literal das linhas 247 a 247:</p>
+<pre><code class="language-python">            plot_matriz_confusao(sols[0]['diagnostico_cross'],direcao,str(caminho))
+</code></pre>
+<p><strong>Abra <a href="../src/graficos_cross.py#L62">src/graficos_cross.py, linha 62</a>.</strong> Recorte literal das linhas 62 a 63:</p>
+<pre><code class="language-python">    soma_linha = cm.sum(axis=1, keepdims=True)
+    cm_norm = np.divide(cm, soma_linha, out=np.zeros_like(cm), where=soma_linha &gt; 0)
+</code></pre>
+<h3>8.8 Comparação intra e cross com baseline</h3>
+<p><img src="../Resultados/tres_datasets_v1/figuras/06_intra_vs_cross.png" alt="Comparação intra e cross da árvore" /></p>
+<p><strong>Como ler:</strong> cada painel fixa a base de destino. No horizontal estão baseline e soluções. Azul mostra F1 intra médio; as outras barras mostram os modelos treinados nas outras bases e avaliados no destino do painel. As hastes no azul são desvio padrão entre folds.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“No painel ToN, o baseline atinge aproximadamente 0,719982 em avaliação dentro da própria base. Isso não garante bom desempenho quando o treinamento vem de outra base. Com S4, o intra fica em 0,651292, enquanto as transferências para ToN são 0,068919 e 0,033129.”</p>
+</blockquote>
+<p>Localize a construção desse painel em <code>src/relatorio_orientadores.py</code>, procurando <code>if avaliacoes:</code> e <code>salvar(fig,'06_intra_vs_cross')</code>. Não use médias genéricas de outros scripts para explicar esse gráfico, que é separado por destino.</p>
+<h2 id="secao-10">9 Métricas que você precisa explicar sem decorar</h2>
+<p><strong>Precisão de uma classe:</strong> entre os exemplos previstos como aquela classe, quantos estavam corretos. <strong>Recall:</strong> entre os exemplos verdadeiros daquela classe, quantos foram reconhecidos. <strong>F1:</strong> média harmônica entre precisão e recall. <strong>Macro-F1:</strong> média dos F1 das classes, dando o mesmo peso a cada classe considerada. <strong>Acurácia:</strong> fração de exemplos classificados corretamente, que pode ser influenciada pelas classes mais numerosas.</p>
+<pre><code class="language-text">Precisão = VP / (VP + FP)
+Recall   = VP / (VP + FN)
+F1       = 2 × Precisão × Recall / (Precisão + Recall)
+Macro-F1 = soma dos F1 das classes / quantidade de classes consideradas
+</code></pre>
+<p>As divisões sem denominador positivo recebem zero conforme a implementação. Macro-F1 não torna o resultado imune a todos os efeitos do desbalanceamento ou da taxonomia.</p>
+<p><strong>Atenção à palavra erro:</strong> <code>1 − F1-macro = 0,45</code> não significa que 45% das linhas foram classificadas incorretamente. A taxa de erro por linha é <code>1 − acurácia</code>. No roteiro, “erro” nos gráficos Pareto é o nome do objetivo baseado em F1.</p>
+<p>Na árvore cross, as desconhecidas são agrupadas no código <code>-1</code> e a métrica usa os rótulos observados e previstos. Na MLP, o macro-F1 usa o vocabulário fixo de treino, inclusive nas tabelas por origem; classes sem suporte nem previsão contribuem com zero. Essa convenção ajuda a explicar por que F1 de painéis diferentes não deve ser comparado sem examinar as classes.</p>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L24">Modulos/modelo_mlp.py, linha 24</a>.</strong> Recorte literal das linhas 24 a 31:</p>
+<pre><code class="language-python">    suporte = cm.sum(axis=1)
+    previstos = cm.sum(axis=0)
+    acertos = np.diag(cm)
+    recall = np.divide(acertos, suporte, out=np.zeros(len(classes)), where=suporte &gt; 0)
+    precisao = np.divide(acertos, previstos, out=np.zeros(len(classes)), where=previstos &gt; 0)
+    f1 = np.divide(2*acertos, suporte+previstos, out=np.zeros(len(classes)),
+                   where=(suporte+previstos) &gt; 0)
+    return dict(f1_macro=float(f1.mean()), acuracia=float(acertos.sum()/max(1, cm.sum())),
+</code></pre>
+<h2 id="secao-11">10 Protocolo da MLP e divisão dos dados</h2>
+<h3>10.1 Novo desenho experimental</h3>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Eu reúno os treinos das três bases em um único processo de aprendizado. O modelo vê exemplos das três origens, mas os exemplos de validação e teste ficam separados. Portanto, avalio registros reservados dessas origens, não uma quarta base desconhecida.”</p>
+</blockquote>
+<p>A configuração está em <code>src/config_mlp_conjunto.yaml</code>. Planejei 70%/15%/15%, com agrupamento de entradas idênticas. As proporções reais são aproximadas, pois grupos inteiros podem concentrar muitas linhas.</p>
+<table>
+<thead>
+<tr>
+<th>Partição</th>
+<th>Registros</th>
+<th>Percentual real</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>treino</td>
+<td>24500089</td>
+<td>72,03%</td>
+</tr>
+<tr>
+<td>validacao</td>
+<td>4304724</td>
+<td>12,66%</td>
+</tr>
+<tr>
+<td>teste</td>
+<td>5211137</td>
+<td>15,32%</td>
+</tr>
+</tbody>
+</table>
+<h3>10.2 Por que agrupar antes de dividir</h3>
+<p>Se duas linhas com os mesmos atributos fossem divididas entre treino e teste, a avaliação poderia ficar facilitada pela repetição da entrada. O código calcula um hash dos <strong>37 atributos comuns em <code>float32</code>, antes da seleção</strong>, sem usar origem ou rótulo, e associa o grupo inteiro a uma partição. Assim, a regra é comum às três bases e às máscaras.</p>
+<p><strong>Abra <a href="../Modulos/dados_mlp.py#L33">Modulos/dados_mlp.py, linha 33</a>.</strong> Recorte literal das linhas 33 a 42:</p>
+<pre><code class="language-python">    grupos = pd.util.hash_pandas_object(pd.DataFrame(X), index=False).to_numpy()
+    # Eu misturo os bits com uma semente fixa sem depender da ordem de leitura.
+    with np.errstate(over='ignore'):
+        h = grupos ^ np.uint64(seed)
+        h = (h ^ (h &gt;&gt; np.uint64(30))) * np.uint64(0xbf58476d1ce4e5b9)
+        h = (h ^ (h &gt;&gt; np.uint64(27))) * np.uint64(0x94d049bb133111eb)
+        h ^= h &gt;&gt; np.uint64(31)
+    u = (h &gt;&gt; np.uint64(11)).astype(np.float64) / (2 ** 53)
+    partes = np.searchsorted(np.cumsum(fracoes)[:2], u, side='right')
+    return grupos, partes
+</code></pre>
+<p><strong>Explique:</strong> a primeira linha identifica grupos por atributos; a seed mistura os bits de maneira determinística; <code>u</code> fornece um valor usado com os limites cumulativos das frações; <code>np.searchsorted</code> escolhe treino, validação ou teste. Duplicatas são preservadas dentro da mesma partição. Isso não é deduplicação.</p>
+<p>Esse agrupamento não garante independência temporal ou de sessões, não elimina quase duplicatas e não faz estratificação exata. As contagens por classe e origem ficam no manifesto. O código interrompe a preparação se alguma classe não tiver exemplos de treino.</p>
+<h3>10.3 Padronização ajustada somente no treino</h3>
+<p><strong>Abra <a href="../Modulos/dados_mlp.py#L118">Modulos/dados_mlp.py, linha 118</a>.</strong> Recorte literal das linhas 118 a 119:</p>
+<pre><code class="language-python">                if parte == 'treino':
+                    scaler.partial_fit(X[selecao])
+</code></pre>
+<p><strong>Abra <a href="../Modulos/dados_mlp.py#L159">Modulos/dados_mlp.py, linha 159</a>.</strong> Recorte literal das linhas 159 a 165:</p>
+<pre><code class="language-python">    def transformar(self, X, indices):
+        selecionado = np.array(X[:, indices], dtype='float32', copy=True)
+        selecionado -= self.media[indices]
+        selecionado /= self.escala[indices]
+        if not np.isfinite(selecionado).all():
+            raise ValueError('Transformação produziu valores não finitos.')
+        return selecionado
+</code></pre>
+<p><strong>Explique:</strong> para cada atributo, subtrai a média do treino e divide pelo desvio estimado no treino. A mesma transformação é aplicada às outras partições. Nunca calcula uma nova média na validação ou no teste. <code>partial_fit</code> do scaler acumula estatísticas por lotes; não significa ajustar uma normalização diferente para cada lote.</p>
+<p>Arquivos binários e <code>np.memmap</code> permitem acessar matrizes grandes em disco. O processamento em lotes e o limite de duas threads controlam recursos; não diminuem o número de exemplos usado no cálculo de F1.</p>
+<h2 id="secao-12">11 Treinamento da MLP e baseline</h2>
+<h3>11.1 Arquitetura</h3>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L76">Modulos/modelo_mlp.py, linha 76</a>.</strong> Recorte literal das linhas 76 a 80:</p>
+<pre><code class="language-python">        modelo = MLPClassifier(hidden_layer_sizes=(2*len(indices),)*3,
+                               activation=cfg['ativacao'], solver='adam',
+                               learning_rate_init=cfg['taxa_aprendizado'], alpha=cfg['alpha'],
+                               batch_size=cfg['batch_size'], random_state=config['seed'],
+                               shuffle=False, early_stopping=False, max_iter=1)
+</code></pre>
+<p><code>k</code> entradas → três camadas ocultas com <code>2k</code> neurônios cada → classes de saída. ReLU é a ativação das camadas ocultas. Adam ajusta os pesos; taxa inicial 0,001 e regularização <code>alpha=0,0001</code> constam da configuração. O minibatch do treinamento tem tamanho 1.024. O lote externo de leitura tem 65.536 registros: são parâmetros distintos.</p>
+<table>
+<thead>
+<tr>
+<th>Seleção</th>
+<th>Entradas</th>
+<th>Camadas ocultas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline</td>
+<td>37</td>
+<td>74, 74, 74</td>
+</tr>
+<tr>
+<td>Exemplo S16 do relatório parcial</td>
+<td>17</td>
+<td>34, 34, 34</td>
+</tr>
+<tr>
+<td>Exemplo S12 do relatório parcial</td>
+<td>11</td>
+<td>22, 22, 22</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Consequência para discutir:</strong> reduzir atributos também reduz a arquitetura. Um ganho de tempo não pode ser atribuído exclusivamente à seleção de colunas.</p>
+<h3>11.2 Desbalanceamento e épocas</h3>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L71">Modulos/modelo_mlp.py, linha 71</a>.</strong> Recorte literal das linhas 71 a 72:</p>
+<pre><code class="language-python">    contagens = np.bincount(treino['y'], minlength=len(classes))
+    pesos = n / (len(classes) * contagens)
+</code></pre>
+<p>O peso de cada classe é inversamente proporcional à sua frequência no treino. Esses pesos são passados como pesos dos exemplos em <code>partial_fit</code>. Não há subamostragem para balancear as classes.</p>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L83">Modulos/modelo_mlp.py, linha 83</a>.</strong> Recorte literal das linhas 83 a 94:</p>
+<pre><code class="language-python">    while estado['epoca'] &lt; cfg['epocas_maximas'] and estado['sem_melhora'] &lt; cfg['paciencia']:
+        inicio = time.perf_counter()
+        epoca = estado['epoca'] + 1
+        rng = np.random.default_rng(config['seed'] + epoca)
+        ordem = rng.permutation(n)
+        modelo = estado['modelo']
+        for pos in range(0, n, config['recursos']['lote_dados']):
+            sel = ordem[pos:pos+config['recursos']['lote_dados']]
+            X = dados.transformar(treino['X'][sel], indices)
+            y = treino['y'][sel]
+            modelo.partial_fit(X, y, classes=classes,
+                              sample_weight=pesos[y] if cfg['pesos_balanceados'] else None)
+</code></pre>
+<p><code>sample_weight</code> recebe <code>pesos[y]</code> quando o balanceamento está habilitado. A cada época, os índices de <strong>todo o treino conjunto</strong> são embaralhados e percorridos em lotes. <code>shuffle=False</code> na MLP não significa ausência de embaralhamento: o laço externo faz isso explicitamente.</p>
+<p>Uma <strong>época</strong> é uma passagem pelos exemplos de treino de uma MLP. Uma <strong>geração</strong> é uma etapa da população do NSGA-II, que pode exigir treinar várias MLPs. Cem gerações não são cem épocas de uma rede única.</p>
+<h3>11.3 Parada e melhor modelo</h3>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L99">Modulos/modelo_mlp.py, linha 99</a>.</strong> Recorte literal das linhas 99 a 104:</p>
+<pre><code class="language-python">        if f1 &gt; estado['melhor_f1'] + cfg['min_delta']:
+            estado.update(melhor_modelo=copy.deepcopy(modelo), melhor_f1=f1,
+                          melhor_epoca=epoca, sem_melhora=0)
+        else:
+            estado['sem_melhora'] += 1
+        estado['epoca'] = epoca
+</code></pre>
+<p>Limite de 30 épocas, paciência de cinco e melhora mínima de 0,0001 no F1 de validação. <code>copy.deepcopy</code> preserva uma cópia do melhor modelo. O <code>early_stopping=False</code> da biblioteca evita uma divisão automática adicional: o código controla a parada com a validação já preparada. <code>max_iter=1</code> não significa treinar uma única época no experimento, pois o treinamento incremental é repetido pelo laço externo.</p>
+<p>O baseline real executou <strong>11 épocas</strong>, preservando o modelo da <strong>época 6</strong>, conforme <code>baseline_validacao.json</code>. Esse comportamento é compatível com cinco épocas posteriores sem melhora suficiente.</p>
+<h3>11.4 Origem do baseline da MLP</h3>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L77">Modulos/busca_mlp.py, linha 77</a>.</strong> Recorte literal das linhas 77 a 77:</p>
+<pre><code class="language-python">    baseline = avaliador.obter(np.ones(d, dtype=int))
+</code></pre>
+<p><strong>Resposta pronta:</strong></p>
+<blockquote>
+<p>“O baseline da MLP é treinado pelo mesmo avaliador das outras máscaras, com todos os 37 atributos. Isso gera três camadas ocultas de 74 neurônios. Ele usa os mesmos dados e regras de treinamento. Seu F1 de validação é 0,515587 e seu tempo mediano observado é 1,631229 microssegundo por evento em lote.”</p>
+</blockquote>
+<p>É calculado antes da busca, incluído na população inicial e usado para fixar a referência de tempo do hipervolume. O código reutiliza modelos e métricas já salvos para a mesma identidade experimental.</p>
+<h2 id="secao-13">12 Medição do terceiro objetivo e avaliação final planejada</h2>
+<h3>12.1 Como o tempo é medido</h3>
+<p>Configuração: até 65.536 eventos da validação, escolhidos com seed 42 e repetidos entre máscaras; lotes de 4.096; dois aquecimentos; sete repetições; duas threads. O F1 usa toda a validação, não apenas esses eventos de benchmark.</p>
+<p><strong>Abra <a href="../Modulos/modelo_mlp.py#L129">Modulos/modelo_mlp.py, linha 129</a>.</strong> Recorte literal das linhas 129 a 144:</p>
+<pre><code class="language-python">    def prever():
+        for inicio in range(0, n, cfg['lote']):
+            modelo.predict(dados.transformar(X[inicio:inicio+cfg['lote']], indices))
+    for _ in range(cfg['aquecimentos']):
+        prever()
+    totais = []
+    for _ in range(cfg['repeticoes']):
+        inicio = time.perf_counter_ns()
+        prever()
+        totais.append((time.perf_counter_ns()-inicio)/1e9)
+    por_evento = np.array(totais)/n
+    return dict(eventos=n, lote=cfg['lote'], repeticoes=cfg['repeticoes'],
+                segundos_totais=totais, segundos_por_evento=por_evento.tolist(),
+                mediana_s=float(np.median(por_evento)), maximo_observado_s=float(por_evento.max()),
+                minimo_s=float(por_evento.min()), desvio_s=float(por_evento.std()),
+                escopo='padronização dos atributos selecionados + predict; sem leitura de disco')
+</code></pre>
+<p><strong>Explique na ordem:</strong> carrega previamente os eventos; aquece a execução; cronometra o laço de padronização e previsão; divide o tempo total pela quantidade de eventos; calcula a mediana e o maior valor das sete médias por evento. Inclui a sobrecarga do laço medido; exclui carregamento inicial do disco e treinamento.</p>
+<p><strong>Unidades:</strong> <code>1 µs = 0,000001 segundo</code>. O valor por evento resulta do processamento em lotes. Não representa necessariamente a latência de uma requisição individual. “Máximo observado” é o maior tempo médio por evento entre repetições, não um limite universal de pior caso.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Uso a mediana para reduzir a influência de uma repetição excepcionalmente lenta. Também guardo o máximo observado, mas não o apresento como maior latência possível. Os valores dependem da máquina e da carga de execução.”</p>
+</blockquote>
+<p>O tempo da árvore cronometra <code>predict</code> no cross e depois calcula média entre direções. O da MLP inclui padronização, repetições e uma amostra fixa de validação. Comparar esses números diretamente não é um benchmark controlado entre arquiteturas.</p>
+<h3>12.2 Como as escolhas serão fixadas antes do teste</h3>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L128">Modulos/busca_mlp.py, linha 128</a>.</strong> Recorte literal das linhas 128 a 130:</p>
+<pre><code class="language-python">    escolhas = {'maior_f1': int(np.argmin(F[:, 0])), 'mais_compacta': int(np.argmin(F[:, 1])),
+                'mais_rapida': int(np.argmin(F[:, 2])),
+                'compromisso': int(np.argmin(np.linalg.norm(normal, axis=1)))}
+</code></pre>
+<p>Escolhe representantes de maior F1, menor quantidade, menor tempo e compromisso. O compromisso usa a menor distância à origem nos três objetivos com tempo transformado, atribuindo pesos iguais nessa escala. Adiciona baseline e remove máscaras repetidas. Essa regra pode escolher solução diferente do joelho geométrico em dois eixos.</p>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L148">Modulos/busca_mlp.py, linha 148</a>.</strong> Recorte literal das linhas 148 a 155:</p>
+<pre><code class="language-python">    escolhas_path = pasta/'escolhas_antes_do_teste.json'
+    escolhas = escolher_solucoes(estado)
+    if escolhas_path.exists():
+        if json.loads(escolhas_path.read_text()) != escolhas:
+            raise ValueError('Escolhas de validação divergiram; eu não seleciono pelo teste.')
+    else:
+        salvar_json(escolhas_path, escolhas)
+    resultados = []
+</code></pre>
+<p>Grava <code>escolhas_antes_do_teste.json</code> antes de avaliar as escolhas no teste. O modelo salvo é reutilizado, sem retreinar com o teste. No estado disponível, essa etapa ainda não tem resultado final salvo. A validação já orienta treinamento, parada e seleção; seus ganhos precisam ser confirmados no teste reservado, sem escolher a vencedora olhando o teste.</p>
+<h2 id="secao-14">13 Resultados parciais da MLP</h2>
+<p>Fonte da geração: <code>Resultados/mlp_conjunto_v1/geracoes/053.json</code>. Fonte da tabela: <code>Resultados/mlp_conjunto_v1/figuras/resumo_validacao.csv</code>. Todos os F1 abaixo são <strong>de validação</strong>, não de teste. A frente contém 17 máscaras distintas nessa geração. Os identificadores S1, S2 etc. são rótulos da frente atual e podem mudar entre gerações; a máscara é a identidade da seleção.</p>
+<table>
+<thead>
+<tr>
+<th>Solução</th>
+<th>Atributos</th>
+<th>F1 de validação</th>
+<th>Mediana em µs/evento</th>
+<th>Máximo observado em µs/evento</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>2</td>
+<td>0,101787</td>
+<td>0,945942</td>
+<td>0,967730</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>4</td>
+<td>0,317251</td>
+<td>0,707915</td>
+<td>0,751168</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>4</td>
+<td>0,222187</td>
+<td>0,656656</td>
+<td>0,689196</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>4</td>
+<td>0,326146</td>
+<td>0,725767</td>
+<td>0,800517</td>
+</tr>
+<tr>
+<td>S5</td>
+<td>5</td>
+<td>0,369025</td>
+<td>0,749354</td>
+<td>0,801001</td>
+</tr>
+<tr>
+<td>S6</td>
+<td>5</td>
+<td>0,268016</td>
+<td>0,680444</td>
+<td>0,716525</td>
+</tr>
+<tr>
+<td>S7</td>
+<td>6</td>
+<td>0,419866</td>
+<td>1,124837</td>
+<td>1,277063</td>
+</tr>
+<tr>
+<td>S8</td>
+<td>7</td>
+<td>0,456258</td>
+<td>1,401376</td>
+<td>1,507114</td>
+</tr>
+<tr>
+<td>S9</td>
+<td>8</td>
+<td>0,466015</td>
+<td>0,788879</td>
+<td>0,871970</td>
+</tr>
+<tr>
+<td>S10</td>
+<td>9</td>
+<td>0,468183</td>
+<td>1,095867</td>
+<td>1,398944</td>
+</tr>
+<tr>
+<td>S11</td>
+<td>9</td>
+<td>0,482780</td>
+<td>1,534952</td>
+<td>1,727770</td>
+</tr>
+<tr>
+<td>S12</td>
+<td>11</td>
+<td>0,509080</td>
+<td>1,028849</td>
+<td>1,250455</td>
+</tr>
+<tr>
+<td>S13</td>
+<td>12</td>
+<td>0,501847</td>
+<td>1,003117</td>
+<td>1,061392</td>
+</tr>
+<tr>
+<td>S14</td>
+<td>13</td>
+<td>0,492505</td>
+<td>0,908032</td>
+<td>0,929379</td>
+</tr>
+<tr>
+<td>S15</td>
+<td>14</td>
+<td>0,526748</td>
+<td>1,208757</td>
+<td>1,383041</td>
+</tr>
+<tr>
+<td>S16</td>
+<td>17</td>
+<td>0,544031</td>
+<td>1,028203</td>
+<td>1,159316</td>
+</tr>
+<tr>
+<td>S17</td>
+<td>21</td>
+<td>0,551061</td>
+<td>1,316958</td>
+<td>1,462524</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td>37</td>
+<td>0,515587</td>
+<td>1,631229</td>
+<td>1,756120</td>
+</tr>
+</tbody>
+</table>
+<h3>13.1 Exemplos para explicar em voz alta</h3>
+<p><strong>S12:</strong> 11 atributos, F1 0,509080 e tempo 1,028849 µs/evento. Fica próximo do F1 do baseline, usando 70,27% menos atributos e aproximadamente 36,93% menos tempo mediano nessa medição. A diferença de F1 é de aproximadamente −0,006508; “próximo” é descritivo, não um teste de equivalência.</p>
+<p><strong>S16:</strong> 17 atributos, F1 0,544031 e tempo 1,028203 µs/evento. Apresenta melhora numérica de F1 de aproximadamente +0,028444, redução de atributos de 54,05% e de tempo mediano de aproximadamente 36,97% em relação ao baseline.</p>
+<p><strong>S17:</strong> 21 atributos e maior F1 da frente mostrada, 0,551061. Seu tempo mediano é 1,316958 µs/evento: maior que o de S16, embora menor que o do baseline. Isso exemplifica por que o maior F1 não encerra a decisão multiobjetivo.</p>
+<p><strong>S3:</strong> quatro atributos e menor tempo mediano da tabela, aproximadamente 0,656656 µs/evento; o F1 é somente 0,222187. Ser rápida não a torna automaticamente a escolha desejada.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Na geração 53, algumas soluções apresentam menos atributos, maior F1 de validação e menor tempo mediano que o baseline. A S16 exemplifica esse resultado. É uma evidência parcial favorável dentro desta execução; preciso concluir a busca, fixar escolhas e avaliar o teste para sustentar a conclusão final.”</p>
+</blockquote>
+<p>Nos três objetivos observados, S16 domina o baseline. Isso não garante significância estatística, estabilidade entre seeds ou superioridade em teste. Também não torna S16 a única opção: S17 oferece F1 maior com custo maior.</p>
+<h2 id="secao-15">14 Como explicar os gráficos da MLP</h2>
+<h3>14.1 Pareto erro e atributos com tempo na cor</h3>
+<p><img src="../Resultados/mlp_conjunto_v1/figuras/01_pareto_erro_atributos.png" alt="Pareto parcial da MLP" /></p>
+<p><strong>Sequência de leitura:</strong></p>
+<ol>
+<li>Leia o rodapé: parcial, geração 53/100, seed 42.</li>
+<li>Horizontal: número de atributos; menor é melhor.</li>
+<li>Vertical: <code>1 − F1-macro de validação</code>; menor é melhor.</li>
+<li>Cor: tempo mediano em µs/evento em lote; tons roxos são mais rápidos e amarelos mais lentos nessa escala.</li>
+<li>X laranja: baseline com 37 atributos.</li>
+<li>Linha azul: pontos não dominados <strong>na projeção de dois objetivos</strong>.</li>
+<li>Reta tracejada: referência geométrica entre os extremos.</li>
+<li>Círculo vermelho: candidato geométrico a joelho, S8 nessa geração.</li>
+</ol>
+<p><strong>Abra <a href="../src/relatorio_mlp.py#L73">src/relatorio_mlp.py, linha 73</a>.</strong> Recorte literal das linhas 73 a 74:</p>
+<pre><code class="language-python">        sc = ax.scatter(x, erro, c=tempos, cmap='viridis', s=70, zorder=3)
+        ind = diag['indices']
+</code></pre>
+<p><strong>Abra <a href="../src/relatorio_mlp.py#L85">src/relatorio_mlp.py, linha 85</a>.</strong> Recorte literal das linhas 85 a 87:</p>
+<pre><code class="language-python">        base = estado['baseline']
+        ax.scatter([base['k']], [base['objetivos'][0]], marker='X', s=100, c='#d97706', label='Baseline')
+        fig.colorbar(sc, ax=ax, label='Mediana de inferência (µs/evento em lote)')
+</code></pre>
+<p><strong>Exemplo de leitura:</strong> S16 tem <code>1 − 0,544031 ≈ 0,455969</code> no vertical; o baseline tem <code>1 − 0,515587 ≈ 0,484413</code>. S16 aparece mais à esquerda e mais abaixo, com menor tempo mediano que o baseline na tabela.</p>
+<p>S8 tem sete atributos, F1 aproximadamente 0,456258 e tempo 1,401376 µs/evento. Ela é destacada pelo formato geométrico em dois eixos, mas S16 tem F1 maior e tempo menor com mais atributos. O círculo não significa “melhor modelo”, e não considera o tempo ao calcular esse joelho.</p>
+<h3>14.2 Por que aparecem pontos acima da linha azul</h3>
+<p><strong>Abra <a href="../src/relatorio_mlp.py#L17">src/relatorio_mlp.py, linha 17</a>.</strong> Recorte literal das linhas 17 a 26:</p>
+<pre><code class="language-python">def fronteira_2d(x, y):
+    &quot;&quot;&quot;Índices não dominados na projeção de dois objetivos minimizados.&quot;&quot;&quot;
+    x, y = np.asarray(x), np.asarray(y)
+    indices = []
+    melhor = float('inf')
+    for i in sorted(range(len(x)), key=lambda i: (x[i], y[i])):
+        if y[i] &lt; melhor:
+            indices.append(i)
+            melhor = y[i]
+    return indices
+</code></pre>
+<p>O conjunto foi otimizado em três objetivos. Ao desenhar apenas atributos e erro, um ponto pode parecer dominado, mas continuar relevante por ser mais rápido. Por exemplo, S3 tem F1 pior que S4 com os mesmos quatro atributos, porém é mais rápida. A linha azul liga apenas os pontos não dominados na projeção atributos/erro, e não todos os pontos da frente tridimensional.</p>
+<h3>14.3 Diagnóstico de curvatura</h3>
+<p><strong>Abra <a href="../src/relatorio_mlp.py#L39">src/relatorio_mlp.py, linha 39</a>.</strong> Recorte literal das linhas 39 a 41:</p>
+<pre><code class="language-python">    normal = (pontos-pontos.min(axis=0))/amplitude
+    ganhos = (1-normal.sum(axis=1))/np.sqrt(2)
+    i = int(np.argmax(ganhos))
+</code></pre>
+<p>Os eixos são normalizados pelos extremos, e o algoritmo mede o desvio em direção à origem relativamente à reta entre extremos. Com menos de três pontos, não avalia curvatura. Esse procedimento não força uma “barriga”, não suaviza resultados e não é um teste estatístico. O desvio registrado da MLP é aproximadamente 0,371817, e não uma métrica de classificação.</p>
+<h3>14.4 Projeções envolvendo tempo</h3>
+<p><img src="../Resultados/mlp_conjunto_v1/figuras/02_pareto_tempo.png" alt="Tempo e desempenho na MLP" /></p>
+<p><strong>Painel esquerdo:</strong> horizontal = tempo; vertical = <code>1 − F1</code>; melhorar significa esquerda e baixo. Compare S3, rápida mas com erro alto, com S16, mais lenta e com erro menor. <strong>Painel direito:</strong> horizontal = atributos; vertical = tempo; também melhora para esquerda e baixo. A dispersão mostra que tempo não cresce de maneira perfeitamente monotônica com a quantidade de atributos.</p>
+<p><strong>Abra <a href="../src/relatorio_mlp.py#L95">src/relatorio_mlp.py, linha 95</a>.</strong> Recorte literal das linhas 95 a 101:</p>
+<pre><code class="language-python">        for ax, xx, yy, xlabel, ylabel in [
+            (axes[0], tempos, erro, 'µs/evento — menor é melhor', '1 − F1-macro — menor é melhor'),
+            (axes[1], x, tempos, 'Atributos — menor é melhor', 'µs/evento — menor é melhor')]:
+            ax.scatter(xx, yy)
+            for s, xi, yi in zip(sols, xx, yy):
+                ax.annotate(s['id'], (xi, yi), xytext=(4, 4), textcoords='offset points')
+            ax.set(xlabel=xlabel, ylabel=ylabel); ax.grid(alpha=.2)
+</code></pre>
+<p>As figuras mostram as mesmas soluções em eixos diferentes; não são três experimentos separados. Os dois painéis não desenham o baseline, por isso consulte a tabela para essa comparação.</p>
+<h3>14.5 Hipervolume de três objetivos</h3>
+<p><img src="../Resultados/mlp_conjunto_v1/figuras/03_hipervolume.png" alt="Evolução parcial do hipervolume da MLP" /></p>
+<p>O hipervolume vai de <strong>0,3064491432</strong>, na geração 1, para <strong>0,4969402744</strong>, na geração 53. Há ganhos maiores no começo e pequenas oscilações perto de 0,50 nas últimas gerações mostradas. Isso indica ganhos recentes menores nesse indicador; não prova convergência nem ótimo global.</p>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L17">Modulos/busca_mlp.py, linha 17</a>.</strong> Recorte literal das linhas 17 a 23:</p>
+<pre><code class="language-python">def normalizar_hv(F, referencia_tempo):
+    &quot;&quot;&quot;Escala fixa, monotônica e limitada; nenhum tempo é cortado.&quot;&quot;&quot;
+    F = np.array(F, dtype=float, copy=True)
+    if referencia_tempo &lt;= 0:
+        raise ValueError('Referência de tempo precisa ser positiva.')
+    F[:, 2] = F[:, 2] / (F[:, 2] + referencia_tempo)
+    return F
+</code></pre>
+<p><strong>Abra <a href="../Modulos/busca_mlp.py#L97">Modulos/busca_mlp.py, linha 97</a>.</strong> Recorte literal das linhas 97 a 99:</p>
+<pre><code class="language-python">        h = dict(geracao=int(alg.n_gen), avaliacoes=int(alg.evaluator.n_eval),
+                 hipervolume=float(HV(ref_point=np.array([1.1]*3))(normalizar_hv(F, ref_tempo))),
+                 solucoes=sols)
+</code></pre>
+<p>O terceiro eixo do HV usa <code>t / (t + t_ref)</code>, com <code>t_ref</code> fixado na mediana do baseline: aproximadamente <code>1,63122935 × 10⁻⁶ s/evento</code>. Isso mantém a transformação monotônica e abaixo de 1. A referência do HV é <code>[1.1, 1.1, 1.1]</code>. O NSGA-II continua recebendo o tempo em segundos/evento; a transformação serve ao HV e à regra de compromisso final.</p>
+<p><strong>Fala sugerida:</strong></p>
+<blockquote>
+<p>“Calculo o hipervolume nos três objetivos, mesmo apresentando o Pareto em projeções 2D. O valor próximo de 0,50 não significa 50% de acurácia. Também não comparo esse número diretamente ao hipervolume de dois objetivos da árvore.”</p>
+</blockquote>
+<h3>14.6 Gráficos que existem no código, mas ainda não são resultados finais</h3>
+<p><code>src/relatorio_mlp.py</code> tem um bloco <code>avaliacoes = estado.get('teste', [])</code>. Somente quando há avaliação de teste ele gera <code>04_validacao_teste</code> e matrizes <code>05_matriz_&lt;solução&gt;_&lt;origem&gt;</code>, além de CSVs por classe.</p>
+<p><strong>Como serão lidos:</strong> validação versus teste compara a métrica que orientou as escolhas com a métrica reservada; matrizes mostram contagens e percentuais por classe verdadeira; diagonal percentual é recall; traço indica ausência de exemplos da classe. Esses gráficos de teste não estão no pacote parcial conferido e não devem ser apresentados como já executados.</p>
+<h2 id="secao-16">15 Como demonstrar o fluxo completo no código</h2>
+<h3>15.1 Fluxo da árvore</h3>
+<p>Abra <code>src/executar_experimento.py</code>, função <code>main</code>, para a rodada de três bases:</p>
+<pre><code class="language-text">Configuração → identidade experimental → preparação dos dados
+→ busca de 15 gerações → Pareto salvo
+→ avaliações detalhadas de cada máscara e baseline
+→ gráficos e marcação de conclusão
+</code></pre>
+<p>A rodada de duas bases também tem a continuação em <code>src/continuar_analise.py</code>. A busca usa <code>src/algoritmo1_otimizacao.py</code> e a avaliação detalhada usa <code>src/algoritmo2_avaliacao.py</code>.</p>
+<p><strong>Abra <a href="../src/executar_experimento.py#L53">src/executar_experimento.py, linha 53</a>.</strong> Recorte literal das linhas 53 a 54:</p>
+<pre><code class="language-python">    tarefas=[(f'avaliacao_solucao_{i:02d}.json',['--pareto',pareto,'--solucao',i],m) for i,m in enumerate(dados['mascaras'])]
+    tarefas.append(('avaliacao_baseline.json',['--mascara','cheia'],[1]*len(dados['atributos'])))
+</code></pre>
+<p><strong>Explique:</strong> monta uma tarefa por solução do Pareto e outra com máscara cheia. A identidade e a máscara são verificadas antes de reutilizar uma avaliação existente. O roteiro usa arquivos salvos, sem executar novamente os treinamentos.</p>
+<h3>15.2 Fluxo da MLP</h3>
+<p><strong>Abra <a href="../src/executar_experimento_mlp.py#L78">src/executar_experimento_mlp.py, linha 78</a>.</strong> Recorte literal das linhas 78 a 82:</p>
+<pre><code class="language-python">            estado = executar_busca(avaliador, config, pasta,
+                                    ao_registrar=lambda e: gerar(e, pasta/'figuras', dados.meta))
+            gerar(estado, pasta/'figuras', dados.meta)
+            if etapa == 'busca':
+                return estado
+</code></pre>
+<p><strong>Explique:</strong> a busca chama o gerador após registrar gerações; se a etapa solicitada for apenas <code>busca</code>, retorna antes do teste; no fluxo completo, fixa as escolhas, avalia o teste, salva <code>resultado_final.json</code> e cria <code>analise.concluida.json</code>. A existência de um PNG não comprova que o fluxo chegou ao fim.</p>
+<h3>15.3 Rastreabilidade e retomada</h3>
+<p><code>Modulos/checkpoint.py</code> mantém cache e progresso da árvore. Na MLP, cada máscara tem diretório de modelo e critérios; o treino incremental salva estado da rede e do otimizador por época. Uma interrupção no meio de uma época exige refazer aquela época a partir do estado salvo anterior.</p>
+<p><code>src/executar_experimento_mlp.py</code> registra configuração, hashes de código, identidade dos dados, versões e ambiente no <code>experimento.json</code>. Isso protege contra misturar resultados de protocolos diferentes; não demonstra sozinho reprodutibilidade em qualquer máquina. <code>src/relatorio_mlp.py</code> usa a seed 42 escrita no rodapé: ela corresponde à configuração atual, mas, se a seed mudar no futuro, o gerador também precisará refletir a nova seed.</p>
+<h2 id="secao-17">16 Perguntas prováveis e respostas seguras</h2>
+<p><strong>De onde veio o baseline?</strong></p>
+<p>“Foi calculado no próprio experimento usando todos os 37 atributos candidatos. Na árvore, usa a mesma árvore e as mesmas avaliações; na MLP, usa a mesma regra de treinamento com três camadas de 74 neurônios.”</p>
+<p><strong>Por que 37 atributos se a base tem mais colunas?</strong></p>
+<p>“São os atributos numéricos comuns restantes após excluir os rótulos e as colunas definidas como possíveis atalhos. Eu salvo a lista e a ordem, em vez de assumir que todas as colunas brutas podem entrar no modelo.”</p>
+<p><strong>O terceiro dataset é teste externo?</strong></p>
+<p>“Na rodada de árvore com três bases, ele participa da seleção e das seis transferências. Na MLP, participa do treino conjunto. Em nenhuma dessas situações ele é uma base externa completamente reservada.”</p>
+<p><strong>A MLP é melhor que a árvore?</strong></p>
+<p>“Os protocolos mudaram. A árvore avalia transferência e a MLP aprende com as três origens. Posso comparar as soluções com o baseline de cada protocolo, mas preciso de um experimento controlado para atribuir a diferença à arquitetura.”</p>
+<p><strong>Menos atributos sempre significa mais rapidez?</strong></p>
+<p>“Não. Eu meço o tempo como objetivo porque a relação não é garantida. Na MLP também mudo o tamanho das camadas ao mudar a quantidade de atributos.”</p>
+<p><strong>Por que o baseline não está na fronteira?</strong></p>
+<p>“Usar todos os atributos não garante o melhor resultado. Uma seleção pode dominar o baseline. Na MLP parcial, S16 é numericamente melhor nos três objetivos. No gráfico original da árvore, o baseline não recebe um marcador explícito; uso as tabelas e a figura intra/cross para compará-lo.”</p>
+<p><strong>Por que existe uma solução acima da linha do Pareto da MLP?</strong></p>
+<p>“A linha representa a fronteira projetada em dois objetivos. O conjunto foi selecionado em três; o tempo pode tornar relevante uma solução que parece pior apenas nos outros dois.”</p>
+<p><strong>A forma da curva prova que o NSGA-II funcionou?</strong></p>
+<p>“O formato visual depende dos eixos e dos pontos encontrados. A mudança de F1 para um menos F1 inverte o sentido vertical. Examino os objetivos, a dominância e a trajetória; a forma sozinha não prova ótimo ou convergência.”</p>
+<p><strong>O joelho é a solução final?</strong></p>
+<p>“Ele é uma indicação geométrica em uma projeção. A escolha de compromisso da MLP usa outra regra, com os três objetivos, antes de abrir o teste.”</p>
+<p><strong>Cem gerações garantem convergência?</strong></p>
+<p>“Não. Esse é o orçamento de busca configurado. Preciso avaliar trajetória, outras seeds e estabilidade. Os arquivos disponíveis da MLP ainda estão na geração 53.”</p>
+<p><strong>Qual é a interpretação do F1 baixo na árvore?</strong></p>
+<p>“A transferência é difícil neste desenho, com diferenças nas bases e nas classes. A seleção melhora algumas métricas relativas ao baseline, mas os valores absolutos são baixos. Minha análise não permite atribuir toda a perda a uma única causa.”</p>
+<p><strong>O conjunto de validação é independente da busca?</strong></p>
+<p>“Na MLP, ele é usado repetidamente para parada e avaliação das máscaras. O teste reservado é a etapa para verificar as escolhas depois de fixadas. Na árvore, as bases de transferência participam diretamente da seleção, então os números cross não são um teste externo independente do processo completo.”</p>
+<p><strong>O máximo registrado é o pior caso de latência?</strong></p>
+<p>“É o máximo observado entre médias por evento de repetições em lote. Não mede a maior latência individual nem garante pior caso.”</p>
+<p><strong>A árvore também tinha três objetivos porque registrava tempo?</strong></p>
+<p>“Não. O que define os objetivos é o vetor entregue ao NSGA-II. Na árvore ele tem dois valores; o tempo era complementar. Na MLP ele tem três.”</p>
+<h2 id="secao-18">17 Fechamento sugerido e próximos passos</h2>
+<blockquote>
+<p>“A árvore mostrou que a seleção pode melhorar a média de transferência em relação ao conjunto completo, com redução de atributos, mas o desempenho absoluto ficou baixo e varia por direção. No novo protocolo, a MLP conjunta procura reduzir erro, atributos e tempo. Até a geração 53, algumas soluções superam numericamente o baseline na validação nos três critérios. O próximo passo é concluir a busca, fixar representantes pela regra definida e avaliar o teste reservado, mantendo a distinção entre essa avaliação e generalização para uma base nova.”</p>
+</blockquote>
+<p>Para uma conclusão mais forte, proponha discutir: repetir com outras seeds; verificar taxonomia e classes raras; medir estabilidade das escolhas; e, se a pergunta continuar sendo transferência para rede não vista, definir uma rodada que reserve uma base inteira e não a use na seleção.</p>
+<h2 id="secao-19">18 Ordem prática dos arquivos na tela</h2>
+<table>
+<thead>
+<tr>
+<th>Ordem</th>
+<th>Abra no VS Code</th>
+<th>O que explicar</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>src/config.yaml</code> e <code>src/config_tres_datasets.yaml</code></td>
+<td>Duas rodadas da árvore e seus parâmetros</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>Modulos/preprocessamento.py</code></td>
+<td>Limpeza, rótulos, colunas e alinhamento</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>Modulos/otimizacao.py</code></td>
+<td>Máscara, dois objetivos e NSGA-II</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>Modulos/classificadores.py</code> e <code>Modulos/avaliacao.py</code></td>
+<td>Árvore, cross, CV e desconhecidas</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>Resultados/tres_datasets_v1/figuras/index.html</code></td>
+<td>Resultados e gráficos concluídos da árvore</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>Resultados/revisao_pareto_anterior/comparacao_eixos.png</code></td>
+<td>Mudança dos eixos sem mudar resultados</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>src/config_mlp_conjunto.yaml</code></td>
+<td>Novo protocolo e terceiro objetivo</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>Modulos/dados_mlp.py</code></td>
+<td>Grupos, partições e scaler somente no treino</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>Modulos/modelo_mlp.py</code></td>
+<td>Arquitetura, épocas, pesos e tempo</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>Modulos/busca_mlp.py</code></td>
+<td>Três objetivos, baseline e escolhas antes do teste</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>Resultados/mlp_conjunto_v1/figuras/index.html</code></td>
+<td>Gráficos parciais de validação</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>src/executar_experimento_mlp.py</code></td>
+<td>Fluxo e evidência de conclusão</td>
+</tr>
+</tbody>
+</table>
+<p>Nos arquivos de resultados, use os JSONs originais para responder sobre a origem dos números. Na árvore, procure <code>avaliacoes</code>, <code>mascara</code>, <code>f1_macro_cross_por_direcao</code> e <code>f1_macro_intra</code>. Na MLP, procure <code>k</code>, <code>objetivos</code>, <code>validacao</code>, <code>treinamento</code> e <code>tempo</code>.</p>
+<h2 id="secao-20">19 Comandos para conferir os arquivos durante a reunião</h2>
+<p>Os comandos abaixo leem resultados existentes. Abra o terminal integrado do VS Code na pasta do projeto:</p>
+<pre><code class="language-bash">cd ~/multiobjective-ids-generalization
+</code></pre>
+<p>Mostrar a tabela final da árvore com três bases:</p>
+<pre><code class="language-bash">cat Resultados/tres_datasets_v1/figuras/resumo_solucoes.csv
+</code></pre>
+<p>Mostrar a tabela parcial da MLP:</p>
+<pre><code class="language-bash">cat Resultados/mlp_conjunto_v1/figuras/resumo_validacao.csv
+</code></pre>
+<p>Verificar a última geração registrada sem carregar o grande histórico completo:</p>
+<pre><code class="language-bash">.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+pasta = Path('Resultados/mlp_conjunto_v1')
+arquivo = sorted((pasta / 'geracoes').glob('*.json'))[-1]
+geracao = json.loads(arquivo.read_text())
+print('Arquivo:', arquivo)
+print('Geração:', geracao['geracao'])
+print('Hipervolume:', geracao['hipervolume'])
+print('Soluções:', len(geracao['solucoes']))
+for nome in ['pareto_validacao.json', 'resultado_final.json',
+             'escolhas_antes_do_teste.json', 'analise.concluida.json']:
+    print(nome, 'existe' if (pasta / nome).exists() else 'ainda ausente')
+PY
+</code></pre>
+<p>Mostrar somente as métricas principais do baseline da árvore:</p>
+<pre><code class="language-bash">.venv/bin/python - &lt;&lt;'PY'
+import json
+from pathlib import Path
+p = Path('Resultados/tres_datasets_v1/metricas/'
+         'pareto_20260910_053058_decision_tree/avaliacao_baseline.json')
+a = json.loads(p.read_text())['avaliacoes'][0]
+valores = a['f1_macro_cross_por_direcao']
+print('Atributos:', a['numero_atributos'])
+print('F1 cross médio:', sum(valores.values()) / len(valores))
+for direcao, f1 in valores.items():
+    print(direcao, f1)
+PY
+</code></pre>
+<p>Antes de mostrar uma fonte textual antiga, confira seu contexto temporal. <code>docs/roteiro_mlp_conjunto.md</code> e partes de <code>Resultados/mlp_conjunto_v1/LEIA-ME.md</code> registram uma etapa em que o baseline real ainda não havia sido executado. Para o estado deste roteiro, use <code>baseline_validacao.json</code>, a geração 053 e a tabela de figuras. A existência dessas notas antigas não apaga o resultado posterior.</p>
+<h2 id="secao-21">20 Glossário para preparar sua fala</h2>
+<table>
+<thead>
+<tr>
+<th>Termo</th>
+<th>Explicação direta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Atributo ou feature</td>
+<td>Uma coluna de entrada do classificador</td>
+</tr>
+<tr>
+<td>Rótulo ou alvo</td>
+<td>A classe verdadeira que o modelo tenta prever</td>
+</tr>
+<tr>
+<td>Dataset ou base</td>
+<td>Conjunto de registros de uma origem</td>
+</tr>
+<tr>
+<td>Máscara</td>
+<td>Lista de decisões 0/1 sobre quais atributos manter</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td>Referência de comparação calculada com o conjunto completo</td>
+</tr>
+<tr>
+<td>Intra</td>
+<td>Treinamento e avaliação dentro da mesma base, em partições distintas</td>
+</tr>
+<tr>
+<td>Cross</td>
+<td>Treinamento em uma base e avaliação em outra</td>
+</tr>
+<tr>
+<td>Validação</td>
+<td>Dados usados para orientar decisões de treinamento e seleção</td>
+</tr>
+<tr>
+<td>Teste reservado</td>
+<td>Dados usados após fixar as escolhas</td>
+</tr>
+<tr>
+<td>Pareto</td>
+<td>Compromissos não dominados considerando os objetivos definidos</td>
+</tr>
+<tr>
+<td>Hipervolume</td>
+<td>Indicador de cobertura e qualidade da frente em relação a referência fixa</td>
+</tr>
+<tr>
+<td>Época</td>
+<td>Uma passagem de treinamento pelos dados de uma rede</td>
+</tr>
+<tr>
+<td>Geração</td>
+<td>Uma etapa da população do algoritmo evolutivo</td>
+</tr>
+<tr>
+<td>Seed</td>
+<td>Valor que controla as sequências de sorteios</td>
+</tr>
+<tr>
+<td>Vazamento</td>
+<td>Informação indevida que facilita a avaliação ou o aprendizado</td>
+</tr>
+<tr>
+<td>Taxonomia</td>
+<td>Conjunto e significado dos rótulos de classes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="secao-22">21 Registro das fontes desta versão</h2>
+<p>Esta é uma fotografia dos arquivos conferidos em 15/10/2026. Os recortes foram extraídos literalmente do código e os números das tabelas foram obtidos dos resultados salvos. Os arredondamentos usam seis casas para F1 e tempo, exceto quando explicitado. Se o experimento avançar ou o código mudar, as linhas e resultados precisam ser atualizados.</p>
+<p>O registro auxiliar <code>roteiro_completo_orientadores_fontes.json</code> guarda hashes SHA-256 dos arquivos usados e os intervalos dos recortes para conferir a correspondência. Ele registra a proveniência documental; não substitui a identidade experimental do treinamento.</p>
+</main></body></html>
