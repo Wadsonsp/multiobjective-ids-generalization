@@ -526,6 +526,41 @@ da geração 73 podem ser refeitas. Fiz o mesmo para a geração 72 em
 **Discussão com os orientadores.** Proposta preparada em 23/10/2026; ainda sem
 decisão.
 
+## Entrada 008 — 23/10/2026: como passei a organizar os experimentos
+
+**Pergunta.** Eu precisava achar rapidamente os resultados, figuras e textos de
+cada etapa e mostrar a ordem da pesquisa a quem receber o projeto.
+
+**Decisão.** Eu numerei os experimentos em ordem cronológica (E0 a E3) e
+descrevi cada um pelas quatro dimensões que mudaram: classificador, protocolo,
+objetivos e bases. Eu não usei essas dimensões como hierarquia de pastas,
+porque elas não variaram uma de cada vez: de E1 para E2 mudou só o número de
+bases, e de E2 para E3 mudaram classificador, protocolo e objetivos juntos.
+Uma hierarquia teria muitos níveis com uma única pasta e não acomodaria bem os
+experimentos propostos (seeds, árvore no protocolo conjunto, generalização
+externa da MLP).
+
+**Fase A (feita).** Criei o [mapa da pesquisa](../MAPA_DA_PESQUISA.md), com a
+linha do tempo, o que mudou em cada passagem, os experimentos propostos e onde
+está cada tipo de arquivo, e uma ficha por experimento nas pastas atuais:
+`Resultados/EXPERIMENTO_E1.md` (que também registra o teste E0),
+`Resultados/tres_datasets_v1/EXPERIMENTO_E2.md` e
+`Resultados/mlp_conjunto_v1/EXPERIMENTO_E3.md`. Dei às fichas um nome diferente
+de `LEIA-ME.md` porque os geradores de relatório sobrescrevem os `LEIA-ME.md`
+das pastas de figuras. Nenhum arquivo foi movido.
+
+**Fase B (pendente).** Mover cada experimento para
+`experimentos/E<n>_<classificador>_<protocolo>_<bases>_<objetivos>/`, com
+`git mv`, atualizando configurações, serviços, `.gitignore` e links. Eu só vou
+mover o E3 depois que a busca terminar, porque a execução grava em
+`Resultados/mlp_conjunto_v1` e a identidade experimental pode recusar a
+retomada com caminhos novos.
+
+**O que descobri ao mapear.** A revisão dos eixos em
+`Resultados/revisao_pareto_anterior/` usa os resultados do E2, e não do E1.
+Antes do E0, entre maio e agosto de 2026, houve uma fase de desenvolvimento do
+pipeline cujos resultados não foram preservados no projeto.
+
 ## Como vou acrescentar minhas próximas entradas
 
 Eu vou registrar mudanças de dataset, métrica, taxonomia, seed, população,

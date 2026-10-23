@@ -5,6 +5,11 @@ cross-dataset em Sistemas de Detecção de Intrusão. Eu uso o NSGA-II como **pr
 para encontrar compromissos entre desempenho cross-dataset e quantidade de
 features. Eu faço a escolha e a análise detalhada das soluções na **Fase 2**.
 
+**Para se orientar, comece pelo [mapa da pesquisa](MAPA_DA_PESQUISA.md):** ele mostra
+os experimentos E1 a E3 em ordem, o que mudou de um para o outro (classificador,
+protocolo, objetivos e bases) e onde estão a configuração, os resultados, as figuras
+e os textos de cada um.
+
 ## Meu novo experimento com MLP conjunta — 21/09/2026
 
 Eu implementei um protocolo independente com treino conjunto das três bases,
