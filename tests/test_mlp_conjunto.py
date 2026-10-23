@@ -17,7 +17,7 @@ from Modulos.modelo_mlp import avaliar, medir_tempo, metricas_matriz, treinar
 from Modulos.busca_mlp import (AvaliadorMLP, ProblemaMLP, escolher_solucoes,
                                executar_busca, normalizar_hv, testar_escolhidas as avaliar_escolhidas)
 from executar_experimento_mlp import executar, validar
-from relatorio_mlp import diagnosticar_curvatura, fronteira_2d, gerar
+from relatorio_mlp import diagnosticar_curvatura, fronteira_2d, gerar, nao_dominados
 
 
 @pytest.fixture
@@ -191,6 +191,11 @@ def test_pareto_nao_impoe_barriga():
     assert diagnosticar_curvatura([1, 2, 3], [.9, .3, .1])['joelho_indice'] == 1
     assert diagnosticar_curvatura([1, 2, 3], [.9, .5, .1])['joelho_indice'] is None
     assert diagnosticar_curvatura([1, 2, 3], [.9, .8, .1])['joelho_indice'] is None
+
+
+def test_dominancia_em_tres_objetivos():
+    F = [[.5, .1, 2.], [.6, .2, 1.], [.6, .2, 3.], [.5, .1, 2.]]
+    assert nao_dominados(F).tolist() == [True, True, False, True]
 
 
 def test_fluxo_cli_e_identidade(config_mlp, monkeypatch):

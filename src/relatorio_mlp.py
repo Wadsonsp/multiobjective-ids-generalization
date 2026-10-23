@@ -9,9 +9,57 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 
 from Modulos.dados_mlp import salvar_json
+
+
+# Eu dou uma única matiz a cada objetivo, nas três figuras; mais escuro é sempre pior.
+OBJETIVOS = dict(atributos=('Atributos selecionados', 'Greens', 'atributos = {:.0f}'),
+                 erro=('1 − F1-macro de validação', 'Purples', 'erro 1 − F1 = {:.3f}'),
+                 tempo=('Mediana de inferência (µs/evento em lote)', 'Blues', 'tempo = {:.2f} µs/evento'))
+
+
+def mapa_objetivo(nome):
+    """Eu corto o trecho mais claro da matiz para nenhum ponto sumir no fundo branco."""
+    return LinearSegmentedColormap.from_list(nome, plt.get_cmap(OBJETIVOS[nome][1])(np.linspace(.3, 1, 256)))
+
+
+def painel_pareto(fig, ax, valores, eixo_x, eixo_y, objetivo_cor, livre, sols, base):
+    """Eu desenho uma projeção com a mesma codificação em todas as figuras."""
+    xx, yy, cor = valores[eixo_x], valores[eixo_y], valores[objetivo_cor]
+    ind = fronteira_2d(xx, yy)
+    na_projecao = np.isin(np.arange(len(sols)), ind)
+    mapa = mapa_objetivo(objetivo_cor)
+    # Eu nomeio na legenda o objetivo da cor e o valor dos tons extremos.
+    for fracao, tom, sentido, valor in [(0., 'clara', 'melhor', cor.min()), (1., 'escura', 'pior', cor.max())]:
+        ax.scatter([], [], marker='s', s=70, color=mapa(fracao), edgecolors='#334155', linewidths=.7,
+                   label=f'Cor {tom}: {OBJETIVOS[objetivo_cor][2].format(valor)} ({sentido})')
+    def pontos(mascara, **estilo):
+        return ax.scatter(xx[mascara], yy[mascara], c=cor[mascara], cmap=mapa,
+                          vmin=cor.min(), vmax=cor.max(), edgecolors='#334155', linewidths=.7,
+                          zorder=3, **estilo)
+    sc = pontos(na_projecao, marker='o', s=70)
+    pontos(~na_projecao & livre, marker='D', s=55)
+    dominadas = ~na_projecao & ~livre
+    if dominadas.any():
+        ax.scatter(xx[dominadas], yy[dominadas], marker='x', s=60, c='#64748b', zorder=3,
+                   label='Dominada nos três objetivos')
+    ax.scatter([], [], marker='o', s=70, c='#cbd5e1', edgecolors='#334155', linewidths=.7,
+               label='Na fronteira desta projeção')
+    ax.scatter([], [], marker='D', s=55, c='#cbd5e1', edgecolors='#334155', linewidths=.7,
+               label='Fora da fronteira 2D, não dominada nos 3 objetivos\n(compensa no objetivo da cor)')
+    ax.plot(xx[ind], yy[ind], color='#334155', lw=1.2, zorder=2,
+            label='Fronteira nesta projeção (segmentos entre pontos)')
+    for s, xi, yi in zip(sols, xx, yy):
+        ax.annotate(s['id'], (xi, yi), xytext=(5, 6), textcoords='offset points', fontsize=8)
+    ax.scatter([base[eixo_x]], [base[eixo_y]], marker='X', s=100, c='#52514e', zorder=3, label='Baseline')
+    fig.colorbar(sc, ax=ax, label=f'Cor = {OBJETIVOS[objetivo_cor][0]}\nmais escuro = pior')
+    ax.set(xlabel=f'{OBJETIVOS[eixo_x][0]} — menor é melhor', ylabel=f'{OBJETIVOS[eixo_y][0]} — menor é melhor',
+           title=f'{eixo_y.capitalize()} × {eixo_x} — cor: {objetivo_cor}')
+    ax.grid(alpha=.2)
+    return ind
 
 
 def fronteira_2d(x, y):
@@ -24,6 +72,12 @@ def fronteira_2d(x, y):
             indices.append(i)
             melhor = y[i]
     return indices
+
+
+def nao_dominados(F):
+    """Máscara das linhas de F não dominadas em todos os objetivos minimizados."""
+    F = np.asarray(F, dtype=float)
+    return np.array([not ((F <= f).all(axis=1) & (F < f).any(axis=1)).any() for f in F], dtype=bool)
 
 
 def diagnosticar_curvatura(x, y):
@@ -69,37 +123,29 @@ def gerar(estado, saida, meta):
             plt.close(fig)
             figuras.append(nome)
 
+        livre = nao_dominados([s['objetivos'] for s in sols])
+        base = estado['baseline']
+        base_valores = dict(atributos=base['k'], erro=base['objetivos'][0], tempo=base['tempo']['mediana_s']*1e6)
+        valores = dict(atributos=x, erro=erro, tempo=tempos)
+
         fig, ax = plt.subplots(figsize=(10, 6))
-        sc = ax.scatter(x, erro, c=tempos, cmap='viridis', s=70, zorder=3)
-        ind = diag['indices']
-        ax.plot(x[ind], erro[ind], color='#0369a1', label='Fronteira nesta projeção (segmentos entre pontos)')
+        ind = painel_pareto(fig, ax, valores, 'atributos', 'erro', 'tempo', livre, sols, base_valores)
         if len(ind) >= 2:
             ax.plot(x[[ind[0], ind[-1]]], erro[[ind[0], ind[-1]]], '--', color='#94a3b8',
                     label='Reta entre extremos — referência geométrica')
-        for s, xi, yi in zip(sols, x, erro):
-            ax.annotate(s['id'], (xi, yi), xytext=(5, 6), textcoords='offset points')
         if diag['joelho_indice'] is not None:
             j = diag['joelho_indice']
             ax.scatter([x[j]], [erro[j]], marker='o', s=220, facecolors='none',
                        edgecolors='#dc2626', label='Candidato a joelho na projeção')
-        base = estado['baseline']
-        ax.scatter([base['k']], [base['objetivos'][0]], marker='X', s=100, c='#d97706', label='Baseline')
-        fig.colorbar(sc, ax=ax, label='Mediana de inferência (µs/evento em lote)')
-        ax.set(xlabel='Atributos selecionados — menor é melhor',
-               ylabel='1 − F1-macro de validação — menor é melhor',
-               title='Pareto em 2D — melhoria em direção ao canto inferior esquerdo')
-        ax.grid(alpha=.2); ax.legend(fontsize=8)
+        ax.legend(fontsize=8)
         salvar(fig, '01_pareto_erro_atributos')
 
-        fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-        for ax, xx, yy, xlabel, ylabel in [
-            (axes[0], tempos, erro, 'µs/evento — menor é melhor', '1 − F1-macro — menor é melhor'),
-            (axes[1], x, tempos, 'Atributos — menor é melhor', 'µs/evento — menor é melhor')]:
-            ax.scatter(xx, yy)
-            for s, xi, yi in zip(sols, xx, yy):
-                ax.annotate(s['id'], (xi, yi), xytext=(4, 4), textcoords='offset points')
-            ax.set(xlabel=xlabel, ylabel=ylabel); ax.grid(alpha=.2)
-        fig.suptitle('Projeções 2D das soluções de três objetivos')
+        fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+        painel_pareto(fig, axes[0], valores, 'tempo', 'erro', 'atributos', livre, sols, base_valores)
+        painel_pareto(fig, axes[1], valores, 'atributos', 'tempo', 'erro', livre, sols, base_valores)
+        for ax in axes:
+            ax.legend(fontsize=7.5, loc='upper center', bbox_to_anchor=(.5, -.13), ncol=2)
+        fig.suptitle('Projeções 2D restantes — em cada painel, a cor mostra o objetivo fora dos eixos')
         salvar(fig, '02_pareto_tempo')
 
         hist = estado['historico']
@@ -167,7 +213,14 @@ Eu seleciono os atributos na validação. Eu uso o teste somente após fixar as 
 
 Eu minimizo erro (1 − F1-macro), proporção de atributos e segundos por evento.
 Eu mostro somente gráficos 2D. Melhorar erro e quantidade de atributos significa avançar para o canto inferior esquerdo.
-Eu uso a cor para representar o tempo. Uma solução pode parecer dominada em dois eixos e continuar não dominada nos três.
+Eu desenho as três projeções com a mesma codificação. A cor mostra o objetivo que ficou fora dos eixos, com uma matiz
+fixa por objetivo: azul para tempo, verde para atributos e roxo para erro; mais escuro é sempre pior.
+Círculos estão na fronteira daquela projeção; losangos ficam fora dela, mas continuam não dominados nos três objetivos
+porque vencem no objetivo da cor quem os domina na projeção. O baseline aparece como X cinza em todos os painéis.
+Na legenda, dois quadrados mostram o tom claro e o escuro com o valor do objetivo da cor em cada extremo.
+Uma solução pode ficar fora das três fronteiras projetadas e continuar não dominada: ela equilibra os três objetivos.
+Eu não uso gráfico 3D estático: a perspectiva impede ler valores, e uma superfície exigiria interpolar entre soluções.
+Para ver os três objetivos lado a lado sem projeção, eu uso as coordenadas paralelas (g1) em figuras_extras.
 Eu ligo apenas os pontos não dominados da projeção; os segmentos não são resultados intermediários medidos.
 Eu não imponho formato de barriga nem suavizo os pontos.
 
