@@ -885,43 +885,85 @@ Nos três objetivos observados, S16 domina o baseline. Isso não garante signifi
 
 ## 14 Como explicar os gráficos da MLP
 
+**Atualização de 23/10/2026:** eu mudei a codificação das figuras 01 e 02 (Entrada 005 do [diário](diario_de_pesquisa.md)). As figuras abaixo apontam para os arquivos vivos da execução; a cópia da nova codificação na geração 72 está em `Resultados/revisao_pareto_tres_objetivos/`. Os exemplos numéricos desta seção continuam referindo-se à geração 53, e os rótulos S* são renumerados a cada geração, então confira os valores na tabela da geração exibida no rodapé.
+
 ### 14.1 Pareto erro e atributos com tempo na cor
 
 ![Pareto parcial da MLP](../Resultados/mlp_conjunto_v1/figuras/01_pareto_erro_atributos.png)
 
 **Sequência de leitura:**
 
-1. Leia o rodapé: parcial, geração 53/100, seed 42.
+1. Leia o título, “Erro × atributos — cor: tempo”, e o rodapé: situação, geração e seed 42.
 2. Horizontal: número de atributos; menor é melhor.
 3. Vertical: `1 − F1-macro de validação`; menor é melhor.
-4. Cor: tempo mediano em µs/evento em lote; tons roxos são mais rápidos e amarelos mais lentos nessa escala.
-5. X laranja: baseline com 37 atributos.
-6. Linha azul: pontos não dominados **na projeção de dois objetivos**.
-7. Reta tracejada: referência geométrica entre os extremos.
-8. Círculo vermelho: candidato geométrico a joelho, S8 nessa geração.
+4. Cor: tempo mediano em µs/evento em lote, em azul; mais escuro é mais lento, portanto pior. A barra de cores nomeia o objetivo, e a legenda traz dois quadrados com o tom claro e o escuro e o tempo correspondente a cada extremo.
+5. Círculo: solução na fronteira desta projeção. Losango: fora da fronteira projetada, mas não dominada nos três objetivos, porque é mais rápida que quem a domina aqui.
+6. X cinza: baseline com 37 atributos.
+7. Linha escura: pontos não dominados **na projeção de dois objetivos**.
+8. Reta tracejada: referência geométrica entre os extremos.
+9. Círculo vermelho: candidato geométrico a joelho (S8 na geração 53).
 
-**Abra [src/relatorio_mlp.py, linha 73](../src/relatorio_mlp.py#L73).** Recorte literal das linhas 73 a 74:
-
-```python
-        sc = ax.scatter(x, erro, c=tempos, cmap='viridis', s=70, zorder=3)
-        ind = diag['indices']
-```
-
-**Abra [src/relatorio_mlp.py, linha 85](../src/relatorio_mlp.py#L85).** Recorte literal das linhas 85 a 87:
+**Abra [src/relatorio_mlp.py, linha 18](../src/relatorio_mlp.py#L18).** Recorte literal das linhas 18 a 21:
 
 ```python
-        base = estado['baseline']
-        ax.scatter([base['k']], [base['objetivos'][0]], marker='X', s=100, c='#d97706', label='Baseline')
-        fig.colorbar(sc, ax=ax, label='Mediana de inferência (µs/evento em lote)')
+# Eu dou uma única matiz a cada objetivo, nas três figuras; mais escuro é sempre pior.
+OBJETIVOS = dict(atributos=('Atributos selecionados', 'Greens', 'atributos = {:.0f}'),
+                 erro=('1 − F1-macro de validação', 'Purples', 'erro 1 − F1 = {:.3f}'),
+                 tempo=('Mediana de inferência (µs/evento em lote)', 'Blues', 'tempo = {:.2f} µs/evento'))
 ```
 
-**Exemplo de leitura:** S16 tem `1 − 0,544031 ≈ 0,455969` no vertical; o baseline tem `1 − 0,515587 ≈ 0,484413`. S16 aparece mais à esquerda e mais abaixo, com menor tempo mediano que o baseline na tabela.
+**Abra [src/relatorio_mlp.py, linha 29](../src/relatorio_mlp.py#L29).** Recorte literal das linhas 29 a 62; esta função desenha as três projeções com a mesma codificação:
+
+```python
+def painel_pareto(fig, ax, valores, eixo_x, eixo_y, objetivo_cor, livre, sols, base):
+    """Eu desenho uma projeção com a mesma codificação em todas as figuras."""
+    xx, yy, cor = valores[eixo_x], valores[eixo_y], valores[objetivo_cor]
+    ind = fronteira_2d(xx, yy)
+    na_projecao = np.isin(np.arange(len(sols)), ind)
+    mapa = mapa_objetivo(objetivo_cor)
+    # Eu nomeio na legenda o objetivo da cor e o valor dos tons extremos.
+    for fracao, tom, sentido, valor in [(0., 'clara', 'melhor', cor.min()), (1., 'escura', 'pior', cor.max())]:
+        ax.scatter([], [], marker='s', s=70, color=mapa(fracao), edgecolors='#334155', linewidths=.7,
+                   label=f'Cor {tom}: {OBJETIVOS[objetivo_cor][2].format(valor)} ({sentido})')
+    def pontos(mascara, **estilo):
+        return ax.scatter(xx[mascara], yy[mascara], c=cor[mascara], cmap=mapa,
+                          vmin=cor.min(), vmax=cor.max(), edgecolors='#334155', linewidths=.7,
+                          zorder=3, **estilo)
+    sc = pontos(na_projecao, marker='o', s=70)
+    pontos(~na_projecao & livre, marker='D', s=55)
+    dominadas = ~na_projecao & ~livre
+    if dominadas.any():
+        ax.scatter(xx[dominadas], yy[dominadas], marker='x', s=60, c='#64748b', zorder=3,
+                   label='Dominada nos três objetivos')
+    ax.scatter([], [], marker='o', s=70, c='#cbd5e1', edgecolors='#334155', linewidths=.7,
+               label='Na fronteira desta projeção')
+    ax.scatter([], [], marker='D', s=55, c='#cbd5e1', edgecolors='#334155', linewidths=.7,
+               label='Fora da fronteira 2D, não dominada nos 3 objetivos\n(compensa no objetivo da cor)')
+    ax.plot(xx[ind], yy[ind], color='#334155', lw=1.2, zorder=2,
+            label='Fronteira nesta projeção (segmentos entre pontos)')
+    for s, xi, yi in zip(sols, xx, yy):
+        ax.annotate(s['id'], (xi, yi), xytext=(5, 6), textcoords='offset points', fontsize=8)
+    ax.scatter([base[eixo_x]], [base[eixo_y]], marker='X', s=100, c='#52514e', zorder=3, label='Baseline')
+    fig.colorbar(sc, ax=ax, label=f'Cor = {OBJETIVOS[objetivo_cor][0]}\nmais escuro = pior')
+    ax.set(xlabel=f'{OBJETIVOS[eixo_x][0]} — menor é melhor', ylabel=f'{OBJETIVOS[eixo_y][0]} — menor é melhor',
+           title=f'{eixo_y.capitalize()} × {eixo_x} — cor: {objetivo_cor}')
+    ax.grid(alpha=.2)
+    return ind
+```
+
+**Abra [src/relatorio_mlp.py, linha 132](../src/relatorio_mlp.py#L132).** Recorte literal da linha 132; a figura principal passa atributos e erro nos eixos e tempo na cor:
+
+```python
+        ind = painel_pareto(fig, ax, valores, 'atributos', 'erro', 'tempo', livre, sols, base_valores)
+```
+
+**Exemplo de leitura (geração 53):** S16 tem `1 − 0,544031 ≈ 0,455969` no vertical; o baseline tem `1 − 0,515587 ≈ 0,484413`. S16 aparece mais à esquerda e mais abaixo, com menor tempo mediano que o baseline na tabela.
 
 S8 tem sete atributos, F1 aproximadamente 0,456258 e tempo 1,401376 µs/evento. Ela é destacada pelo formato geométrico em dois eixos, mas S16 tem F1 maior e tempo menor com mais atributos. O círculo não significa “melhor modelo”, e não considera o tempo ao calcular esse joelho.
 
-### 14.2 Por que aparecem pontos acima da linha azul
+### 14.2 Por que aparecem pontos acima da linha da fronteira
 
-**Abra [src/relatorio_mlp.py, linha 17](../src/relatorio_mlp.py#L17).** Recorte literal das linhas 17 a 26:
+**Abra [src/relatorio_mlp.py, linha 65](../src/relatorio_mlp.py#L65).** Recorte literal das linhas 65 a 80:
 
 ```python
 def fronteira_2d(x, y):
@@ -934,13 +976,19 @@ def fronteira_2d(x, y):
             indices.append(i)
             melhor = y[i]
     return indices
+
+
+def nao_dominados(F):
+    """Máscara das linhas de F não dominadas em todos os objetivos minimizados."""
+    F = np.asarray(F, dtype=float)
+    return np.array([not ((F <= f).all(axis=1) & (F < f).any(axis=1)).any() for f in F], dtype=bool)
 ```
 
-O conjunto foi otimizado em três objetivos. Ao desenhar apenas atributos e erro, um ponto pode parecer dominado, mas continuar relevante por ser mais rápido. Por exemplo, S3 tem F1 pior que S4 com os mesmos quatro atributos, porém é mais rápida. A linha azul liga apenas os pontos não dominados na projeção atributos/erro, e não todos os pontos da frente tridimensional.
+O conjunto foi otimizado em três objetivos. Ao desenhar apenas atributos e erro, um ponto pode parecer dominado, mas continuar relevante por ser mais rápido. Por exemplo, na geração 53, S3 tinha F1 pior que S4 com os mesmos quatro atributos, porém era mais rápida. `fronteira_2d` liga apenas os pontos não dominados na projeção; `nao_dominados` confere a dominância nos três objetivos e define quem vira losango. Na geração 72, S11 e S18 ficam fora das três fronteiras projetadas e continuam não dominadas, porque equilibram os três objetivos.
 
 ### 14.3 Diagnóstico de curvatura
 
-**Abra [src/relatorio_mlp.py, linha 39](../src/relatorio_mlp.py#L39).** Recorte literal das linhas 39 a 41:
+**Abra [src/relatorio_mlp.py, linha 93](../src/relatorio_mlp.py#L93).** Recorte literal das linhas 93 a 95:
 
 ```python
     normal = (pontos-pontos.min(axis=0))/amplitude
@@ -948,27 +996,24 @@ O conjunto foi otimizado em três objetivos. Ao desenhar apenas atributos e erro
     i = int(np.argmax(ganhos))
 ```
 
-Os eixos são normalizados pelos extremos, e o algoritmo mede o desvio em direção à origem relativamente à reta entre extremos. Com menos de três pontos, não avalia curvatura. Esse procedimento não força uma “barriga”, não suaviza resultados e não é um teste estatístico. O desvio registrado da MLP é aproximadamente 0,371817, e não uma métrica de classificação.
+Os eixos são normalizados pelos extremos, e o algoritmo mede o desvio em direção à origem relativamente à reta entre extremos. Com menos de três pontos, não avalia curvatura. Esse procedimento não força uma “barriga”, não suaviza resultados e não é um teste estatístico. Na geração 53, o desvio registrado da MLP era aproximadamente 0,371817, e não uma métrica de classificação.
 
 ### 14.4 Projeções envolvendo tempo
 
 ![Tempo e desempenho na MLP](../Resultados/mlp_conjunto_v1/figuras/02_pareto_tempo.png)
 
-**Painel esquerdo:** horizontal = tempo; vertical = `1 − F1`; melhorar significa esquerda e baixo. Compare S3, rápida mas com erro alto, com S16, mais lenta e com erro menor. **Painel direito:** horizontal = atributos; vertical = tempo; também melhora para esquerda e baixo. A dispersão mostra que tempo não cresce de maneira perfeitamente monotônica com a quantidade de atributos.
+**Painel esquerdo (“Erro × tempo — cor: atributos”):** horizontal = tempo; vertical = `1 − F1`; cor = atributos, em verde. **Painel direito (“Tempo × atributos — cor: erro”):** horizontal = atributos; vertical = tempo; cor = erro, em roxo. Nos dois, melhorar significa esquerda e baixo, e mais escuro é pior. A legenda, abaixo de cada painel para não cobrir pontos, mostra o tom claro e o escuro com o número de atributos ou o erro de cada extremo. Círculos, losangos, linha da fronteira e baseline seguem a mesma regra da figura principal.
 
-**Abra [src/relatorio_mlp.py, linha 95](../src/relatorio_mlp.py#L95).** Recorte literal das linhas 95 a 101:
+A figura fica separada da principal porque juntar as três projeções deixaria painéis pequenos para os rótulos e para o joelho. No painel direito, poucas soluções formam a fronteira (S1, S2 e S5 na geração 72), e a dispersão mostra que o tempo não cresce de maneira perfeitamente monotônica com a quantidade de atributos.
+
+**Abra [src/relatorio_mlp.py, linha 144](../src/relatorio_mlp.py#L144).** Recorte literal das linhas 144 a 145:
 
 ```python
-        for ax, xx, yy, xlabel, ylabel in [
-            (axes[0], tempos, erro, 'µs/evento — menor é melhor', '1 − F1-macro — menor é melhor'),
-            (axes[1], x, tempos, 'Atributos — menor é melhor', 'µs/evento — menor é melhor')]:
-            ax.scatter(xx, yy)
-            for s, xi, yi in zip(sols, xx, yy):
-                ax.annotate(s['id'], (xi, yi), xytext=(4, 4), textcoords='offset points')
-            ax.set(xlabel=xlabel, ylabel=ylabel); ax.grid(alpha=.2)
+        painel_pareto(fig, axes[0], valores, 'tempo', 'erro', 'atributos', livre, sols, base_valores)
+        painel_pareto(fig, axes[1], valores, 'atributos', 'tempo', 'erro', livre, sols, base_valores)
 ```
 
-As figuras mostram as mesmas soluções em eixos diferentes; não são três experimentos separados. Os dois painéis não desenham o baseline, por isso consulte a tabela para essa comparação.
+As figuras mostram as mesmas soluções em eixos diferentes; não são três experimentos separados. Desde 23/10/2026, os dois painéis também desenham o baseline.
 
 ### 14.5 Hipervolume de três objetivos
 
@@ -1081,6 +1126,14 @@ A rodada de duas bases também tem a continuação em `src/continuar_analise.py`
 **Por que existe uma solução acima da linha do Pareto da MLP?**
 
 “A linha representa a fronteira projetada em dois objetivos. O conjunto foi selecionado em três; o tempo pode tornar relevante uma solução que parece pior apenas nos outros dois.”
+
+**Por que não mostrar o Pareto em 3D?**
+
+“Num 3D impresso, a perspectiva impede ler valores e os rótulos se sobrepõem; desenhar uma superfície exigiria inventar pontos entre as soluções. Eu mostro três projeções 2D com a mesma codificação: a cor é o objetivo fora dos eixos e o losango indica que a solução não é dominada nos três. Para ver os três objetivos ao mesmo tempo, eu uso as coordenadas paralelas.”
+
+**Por que o Pareto de erro e o de tempo estão em figuras separadas?**
+
+“A figura principal, erro versus atributos, concentra o trade-off central e o diagnóstico de joelho e precisa de espaço para os rótulos. As duas projeções com tempo ficam juntas em outra figura, com as mesmas regras de cor, formato e baseline, então as três podem ser comparadas diretamente.”
 
 **A forma da curva prova que o NSGA-II funcionou?**
 
@@ -1219,3 +1272,5 @@ Antes de mostrar uma fonte textual antiga, confira seu contexto temporal. `docs/
 Esta é uma fotografia dos arquivos conferidos em 15/10/2026. Os recortes foram extraídos literalmente do código e os números das tabelas foram obtidos dos resultados salvos. Os arredondamentos usam seis casas para F1 e tempo, exceto quando explicitado. Se o experimento avançar ou o código mudar, as linhas e resultados precisam ser atualizados.
 
 O registro auxiliar `roteiro_completo_orientadores_fontes.json` guarda hashes SHA-256 dos arquivos usados e os intervalos dos recortes para conferir a correspondência. Ele registra a proveniência documental; não substitui a identidade experimental do treinamento.
+
+Em 23/10/2026, eu atualizei somente as seções 14.1 a 14.4 e duas perguntas da seção 16, por causa da nova codificação do Pareto da MLP. Nessa atualização, eu refiz os recortes e o hash de `src/relatorio_mlp.py` e a registrei no campo `atualizacoes` do JSON. Os números das demais seções continuam sendo os da geração 53.

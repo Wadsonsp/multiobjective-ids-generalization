@@ -25,7 +25,7 @@
     "src/relatorio_orientadores.py": "63a649a06e86599c8421cb28142deef830bdd3fe16ede8b3d20cd3eb3e47b140",
     "src/graficos_cross.py": "7e0248978e6edde243803329c830f08003fc27da6dfa66ce74671c855f9971f9",
     "Modulos/modelo_mlp.py": "50af4af88a20db7352917d03a2f06092403a64a84163b5f3bd10e6e0a9b679c1",
-    "src/relatorio_mlp.py": "62e74e6a541a9c33f7ecc5186da211d0fc3a8f33e11cc3cf7759df5e04fe4355",
+    "src/relatorio_mlp.py": "ac198236e27cb93d9c45e6ecd9b8e8e63260366b0da1c32461e63d65a23372c7",
     "src/executar_experimento.py": "c0853977a090b693acb86d00ed794ac3c3cbc6dcb75e6e678802bdb608ef2b15",
     "src/executar_experimento_mlp.py": "b262b43d191f055109b3b4c3df51b00058ae9b1019af0f491a537be8588f5cda"
   },
@@ -247,36 +247,6 @@
       "conteudo": "    escolhas_path = pasta/'escolhas_antes_do_teste.json'\n    escolhas = escolher_solucoes(estado)\n    if escolhas_path.exists():\n        if json.loads(escolhas_path.read_text()) != escolhas:\n            raise ValueError('Escolhas de validação divergiram; eu não seleciono pelo teste.')\n    else:\n        salvar_json(escolhas_path, escolhas)\n    resultados = []"
     },
     {
-      "arquivo": "src/relatorio_mlp.py",
-      "inicio": 73,
-      "fim": 74,
-      "conteudo": "        sc = ax.scatter(x, erro, c=tempos, cmap='viridis', s=70, zorder=3)\n        ind = diag['indices']"
-    },
-    {
-      "arquivo": "src/relatorio_mlp.py",
-      "inicio": 85,
-      "fim": 87,
-      "conteudo": "        base = estado['baseline']\n        ax.scatter([base['k']], [base['objetivos'][0]], marker='X', s=100, c='#d97706', label='Baseline')\n        fig.colorbar(sc, ax=ax, label='Mediana de inferência (µs/evento em lote)')"
-    },
-    {
-      "arquivo": "src/relatorio_mlp.py",
-      "inicio": 17,
-      "fim": 26,
-      "conteudo": "def fronteira_2d(x, y):\n    \"\"\"Índices não dominados na projeção de dois objetivos minimizados.\"\"\"\n    x, y = np.asarray(x), np.asarray(y)\n    indices = []\n    melhor = float('inf')\n    for i in sorted(range(len(x)), key=lambda i: (x[i], y[i])):\n        if y[i] < melhor:\n            indices.append(i)\n            melhor = y[i]\n    return indices"
-    },
-    {
-      "arquivo": "src/relatorio_mlp.py",
-      "inicio": 39,
-      "fim": 41,
-      "conteudo": "    normal = (pontos-pontos.min(axis=0))/amplitude\n    ganhos = (1-normal.sum(axis=1))/np.sqrt(2)\n    i = int(np.argmax(ganhos))"
-    },
-    {
-      "arquivo": "src/relatorio_mlp.py",
-      "inicio": 95,
-      "fim": 101,
-      "conteudo": "        for ax, xx, yy, xlabel, ylabel in [\n            (axes[0], tempos, erro, 'µs/evento — menor é melhor', '1 − F1-macro — menor é melhor'),\n            (axes[1], x, tempos, 'Atributos — menor é melhor', 'µs/evento — menor é melhor')]:\n            ax.scatter(xx, yy)\n            for s, xi, yi in zip(sols, xx, yy):\n                ax.annotate(s['id'], (xi, yi), xytext=(4, 4), textcoords='offset points')\n            ax.set(xlabel=xlabel, ylabel=ylabel); ax.grid(alpha=.2)"
-    },
-    {
       "arquivo": "Modulos/busca_mlp.py",
       "inicio": 17,
       "fim": 23,
@@ -299,6 +269,55 @@
       "inicio": 78,
       "fim": 82,
       "conteudo": "            estado = executar_busca(avaliador, config, pasta,\n                                    ao_registrar=lambda e: gerar(e, pasta/'figuras', dados.meta))\n            gerar(estado, pasta/'figuras', dados.meta)\n            if etapa == 'busca':\n                return estado"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 18,
+      "fim": 21,
+      "conteudo": "# Eu dou uma única matiz a cada objetivo, nas três figuras; mais escuro é sempre pior.\nOBJETIVOS = dict(atributos=('Atributos selecionados', 'Greens', 'atributos = {:.0f}'),\n                 erro=('1 − F1-macro de validação', 'Purples', 'erro 1 − F1 = {:.3f}'),\n                 tempo=('Mediana de inferência (µs/evento em lote)', 'Blues', 'tempo = {:.2f} µs/evento'))"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 29,
+      "fim": 62,
+      "conteudo": "def painel_pareto(fig, ax, valores, eixo_x, eixo_y, objetivo_cor, livre, sols, base):\n    \"\"\"Eu desenho uma projeção com a mesma codificação em todas as figuras.\"\"\"\n    xx, yy, cor = valores[eixo_x], valores[eixo_y], valores[objetivo_cor]\n    ind = fronteira_2d(xx, yy)\n    na_projecao = np.isin(np.arange(len(sols)), ind)\n    mapa = mapa_objetivo(objetivo_cor)\n    # Eu nomeio na legenda o objetivo da cor e o valor dos tons extremos.\n    for fracao, tom, sentido, valor in [(0., 'clara', 'melhor', cor.min()), (1., 'escura', 'pior', cor.max())]:\n        ax.scatter([], [], marker='s', s=70, color=mapa(fracao), edgecolors='#334155', linewidths=.7,\n                   label=f'Cor {tom}: {OBJETIVOS[objetivo_cor][2].format(valor)} ({sentido})')\n    def pontos(mascara, **estilo):\n        return ax.scatter(xx[mascara], yy[mascara], c=cor[mascara], cmap=mapa,\n                          vmin=cor.min(), vmax=cor.max(), edgecolors='#334155', linewidths=.7,\n                          zorder=3, **estilo)\n    sc = pontos(na_projecao, marker='o', s=70)\n    pontos(~na_projecao & livre, marker='D', s=55)\n    dominadas = ~na_projecao & ~livre\n    if dominadas.any():\n        ax.scatter(xx[dominadas], yy[dominadas], marker='x', s=60, c='#64748b', zorder=3,\n                   label='Dominada nos três objetivos')\n    ax.scatter([], [], marker='o', s=70, c='#cbd5e1', edgecolors='#334155', linewidths=.7,\n               label='Na fronteira desta projeção')\n    ax.scatter([], [], marker='D', s=55, c='#cbd5e1', edgecolors='#334155', linewidths=.7,\n               label='Fora da fronteira 2D, não dominada nos 3 objetivos\\n(compensa no objetivo da cor)')\n    ax.plot(xx[ind], yy[ind], color='#334155', lw=1.2, zorder=2,\n            label='Fronteira nesta projeção (segmentos entre pontos)')\n    for s, xi, yi in zip(sols, xx, yy):\n        ax.annotate(s['id'], (xi, yi), xytext=(5, 6), textcoords='offset points', fontsize=8)\n    ax.scatter([base[eixo_x]], [base[eixo_y]], marker='X', s=100, c='#52514e', zorder=3, label='Baseline')\n    fig.colorbar(sc, ax=ax, label=f'Cor = {OBJETIVOS[objetivo_cor][0]}\\nmais escuro = pior')\n    ax.set(xlabel=f'{OBJETIVOS[eixo_x][0]} — menor é melhor', ylabel=f'{OBJETIVOS[eixo_y][0]} — menor é melhor',\n           title=f'{eixo_y.capitalize()} × {eixo_x} — cor: {objetivo_cor}')\n    ax.grid(alpha=.2)\n    return ind"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 132,
+      "fim": 132,
+      "conteudo": "        ind = painel_pareto(fig, ax, valores, 'atributos', 'erro', 'tempo', livre, sols, base_valores)"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 65,
+      "fim": 80,
+      "conteudo": "def fronteira_2d(x, y):\n    \"\"\"Índices não dominados na projeção de dois objetivos minimizados.\"\"\"\n    x, y = np.asarray(x), np.asarray(y)\n    indices = []\n    melhor = float('inf')\n    for i in sorted(range(len(x)), key=lambda i: (x[i], y[i])):\n        if y[i] < melhor:\n            indices.append(i)\n            melhor = y[i]\n    return indices\n\n\ndef nao_dominados(F):\n    \"\"\"Máscara das linhas de F não dominadas em todos os objetivos minimizados.\"\"\"\n    F = np.asarray(F, dtype=float)\n    return np.array([not ((F <= f).all(axis=1) & (F < f).any(axis=1)).any() for f in F], dtype=bool)"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 93,
+      "fim": 95,
+      "conteudo": "    normal = (pontos-pontos.min(axis=0))/amplitude\n    ganhos = (1-normal.sum(axis=1))/np.sqrt(2)\n    i = int(np.argmax(ganhos))"
+    },
+    {
+      "arquivo": "src/relatorio_mlp.py",
+      "inicio": 144,
+      "fim": 145,
+      "conteudo": "        painel_pareto(fig, axes[0], valores, 'tempo', 'erro', 'atributos', livre, sols, base_valores)\n        painel_pareto(fig, axes[1], valores, 'atributos', 'tempo', 'erro', livre, sols, base_valores)"
+    }
+  ],
+  "atualizacoes": [
+    {
+      "data": "2026-10-23",
+      "secoes": [
+        "14.1",
+        "14.2",
+        "14.3",
+        "14.4",
+        "16"
+      ],
+      "motivo": "Nova codificação das figuras 01 e 02 do Pareto da MLP; recortes de src/relatorio_mlp.py atualizados. Os números das demais seções continuam referindo-se à geração 53."
     }
   ]
 }

@@ -66,9 +66,13 @@ Eu congelo a primeira medição concluída de cada máscara e a reutilizo na ret
 
 ## Como eu apresento o Pareto somente em 2D
 
-No gráfico principal, eu coloco **quantidade de atributos no eixo horizontal** e **1 − F1-macro no vertical**. Ambos melhoram em direção ao canto inferior esquerdo. Eu uso a cor para mostrar o tempo de inferência. Eu também apresento erro versus tempo e atributos versus tempo em dois painéis 2D.
+No gráfico principal, eu coloco **quantidade de atributos no eixo horizontal** e **1 − F1-macro no vertical**. Ambos melhoram em direção ao canto inferior esquerdo. Eu também apresento erro versus tempo e atributos versus tempo em dois painéis 2D, numa figura separada; a figura principal fica sozinha porque concentra o trade-off central e o diagnóstico de joelho.
 
-Eu não altero os valores para produzir uma barriga. Eu traço segmentos somente entre os pontos não dominados na projeção de dois objetivos. Eu explico que esses segmentos não são soluções intermediárias medidas. Um ponto pode parecer dominado em dois eixos e permanecer não dominado quando considero o tempo.
+Desde 23/10/2026, eu desenho as três projeções com a mesma codificação (função `painel_pareto` em `src/relatorio_mlp.py`). A cor mostra o objetivo que ficou fora dos eixos, com uma única matiz por objetivo: azul para tempo, verde para atributos e roxo para erro. Mais escuro é sempre pior. Cada barra de cores nomeia o objetivo, e a legenda mostra o tom claro e o escuro com o valor do objetivo em cada extremo. Círculos estão na fronteira daquela projeção; losangos ficam fora dela, mas são não dominados nos três objetivos (função `nao_dominados`); um “x” cinza marcaria uma solução dominada nos três. O baseline aparece como X cinza nos três painéis. Cada painel tem o título “Y × X — cor: objetivo”, por exemplo “Erro × atributos — cor: tempo”.
+
+Eu não altero os valores para produzir uma barriga. Eu traço segmentos somente entre os pontos não dominados na projeção de dois objetivos. Eu explico que esses segmentos não são soluções intermediárias medidas. Um ponto pode parecer dominado em dois eixos e permanecer não dominado quando considero o terceiro objetivo; uma solução pode até ficar fora das três fronteiras projetadas e continuar não dominada.
+
+Eu não uso Pareto 3D estático: a perspectiva impede ler valores e uma superfície exigiria interpolar entre soluções. Para ver os três objetivos sem projeção, eu uso as coordenadas paralelas de `src/graficos_mlp_extras.py` (`g1_coordenadas_paralelas`). A justificativa completa está na Entrada 005 do [diário](diario_de_pesquisa.md).
 
 Para verificar a curvatura, eu normalizo os dois eixos pelos extremos da fronteira projetada e comparo seus pontos com a reta que liga esses extremos. Se existir desvio em direção à origem, eu destaco o maior como candidato geométrico a joelho. Com menos de três pontos, eu informo que não há pontos suficientes. Eu não apresento esse indicador como teste estatístico, prova de convergência ou decisão automática.
 

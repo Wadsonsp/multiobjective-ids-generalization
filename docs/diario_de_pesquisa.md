@@ -290,6 +290,242 @@ Eu detalho os procedimentos e limites no [novo protocolo](experimento_mlp_conjun
 e no [roteiro para orientação](roteiro_mlp_conjunto.md). Eu registro a conclusão
 científica da rodada somente depois da execução real, separando-a dos testes de software.
 
+## Entrada 005 — 23/10/2026: como passei a representar os três objetivos em 2D
+
+**Pergunta que investiguei.** Eu me perguntei se um gráfico de Pareto em 3D
+representaria melhor os três objetivos da MLP (erro `1 − F1-macro`, proporção
+de atributos e tempo por evento) e se fazia sentido gerar o Pareto de erro e o
+de tempo em figuras separadas.
+
+**O que observei antes da mudança.** No gráfico erro × atributos, eu ligava só
+os pontos não dominados daquela projeção e mostrava o tempo apenas na cor.
+Soluções rápidas, como S2, S5 e S8, pareciam dominadas e, portanto, ruins, embora
+continuem não dominadas nos três objetivos. Na figura de tempo, os dois painéis
+mostravam só pontos azuis iguais, sem fronteira, sem o objetivo omitido e sem o
+baseline. Assim, as três projeções não eram lidas da mesma forma.
+
+**Alternativas que considerei.**
+
+1. Pareto 3D estático: eu o rejeitei para PNG/PDF. A perspectiva impede ler
+   valores, os rótulos se sobrepõem e uma superfície exigiria interpolar entre
+   soluções, o que contraria meu critério de não suavizar nem sugerir resultados
+   intermediários medidos. Com o tempo num eixo, eu também daria a ele o mesmo
+   peso visual que ao erro, embora sua amplitude seja pequena (≈0,65–1,6 µs/evento).
+2. Pareto 3D interativo no `index.html`: eu o considerei útil para explorar,
+   mas não para a dissertação impressa. Eu não o adotei nesta entrada.
+3. Matriz única com as três projeções: eu a rejeitei porque os painéis ficariam
+   pequenos para 22 rótulos e para o diagnóstico de joelho.
+4. Coordenadas paralelas: eu constatei que já as gero em
+   `figuras_extras/g1_coordenadas_paralelas`, com os três objetivos e mais seis
+   métricas; eu não criei uma versão reduzida a três eixos.
+
+**Decisão que tomei.** Eu mantive somente gráficos 2D e as duas figuras
+separadas: a figura 01 (erro × atributos) continua como principal, porque é o
+trade-off central e é nela que calculo o candidato a joelho. Eu passei a usar a
+mesma codificação nas três projeções:
+
+- a cor mostra o objetivo que ficou fora dos eixos, com uma única matiz fixa por
+  objetivo: azul para tempo, verde para atributos e roxo para erro. Mais escuro
+  é sempre pior, e a barra de cores diz “Cor = <objetivo>, mais escuro = pior”;
+- círculos estão na fronteira daquela projeção, ligados por segmentos;
+- losangos ficam fora da fronteira projetada, mas não são dominados nos três
+  objetivos. Eles vencem, no objetivo da cor, as soluções que os dominam na
+  projeção;
+- um “x” cinza marcaria uma solução dominada nos três objetivos, se houvesse;
+- o baseline aparece como X cinza nos três painéis;
+- a legenda de cada painel explica as cores dos pontos: dois quadrados mostram
+  o tom claro e o escuro, com o nome do objetivo e o valor de cada extremo
+  (por exemplo, “Cor clara: tempo = 0.65 µs/evento (melhor)”). Eu acrescentei
+  isso porque só a barra de cores não deixava claro, à primeira leitura, o que
+  a cor dos pontos representava. Na figura 02, eu pus a legenda abaixo de cada
+  painel para não cobrir pontos;
+- cada painel tem um título no formato “Y × X — cor: objetivo”, por exemplo
+  “Erro × atributos — cor: tempo”. Eu troquei o título genérico da figura 01
+  porque ele não dizia o que estava em cada eixo, e isso levou a uma leitura
+  errada (atributos × tempo em vez de atributos × erro).
+
+Eu troquei o `viridis` por matizes únicas porque cada barra de cores agora
+representa um objetivo diferente; com o mesmo mapa, a mesma cor significaria
+coisas diferentes em cada painel.
+
+**Justificativa e evidências.** Na geração 72/100 (relatório PARCIAL, seed 42,
+somente validação), as 22 soluções salvas são não dominadas nos três objetivos.
+Nas projeções, 15 estão na fronteira erro × atributos, 11 na fronteira
+erro × tempo e só 3 (S1, S2 e S5) na fronteira atributos × tempo. S11 e S18
+não estão em nenhuma das três fronteiras projetadas e continuam não dominadas:
+elas equilibram os três objetivos. Esse caso mostra que nenhuma projeção 2D,
+sozinha ou em conjunto, substitui a dominância nos três objetivos, e justifica
+marcar a dominância tridimensional explicitamente em todos os painéis.
+
+**Configuração, experimento e código.** `src/config_mlp_conjunto.yaml`,
+`Resultados/mlp_conjunto_v1/`. Eu alterei `src/relatorio_mlp.py`: criei
+`nao_dominados` e `painel_pareto` e reescrevi as figuras 01 e 02 sobre essa
+função. Acrescentei `test_dominancia_em_tres_objetivos` em
+`tests/test_mlp_conjunto.py`. A mudança parte do commit `a67b962` e ainda não
+estava commitada quando a registrei. Ela altera somente a apresentação: não
+muda objetivos, busca, seleção ou medições.
+
+**Limitações que reconheci.** Os números acima são parciais e mudarão até a
+geração 100. Soluções com o mesmo número de atributos têm a mesma arquitetura
+(três camadas de `2k` neurônios), mas tempos bem diferentes: com seis atributos,
+S9 tem 1,42 µs/evento e S10, 0,83 µs/evento. Eu atribuo essa diferença
+principalmente às condições da medição, e não ao modelo, e por isso não
+interpreto diferenças pequenas de tempo entre soluções de tamanho parecido. A fronteira projetada depende de empates: com atributos e erro
+iguais, eu mantenho a primeira solução pela ordem. A distinção entre círculo e
+losango é geométrica e não indica qual solução é melhor. A execução em andamento
+importou o módulo antigo ao iniciar; até ela terminar ou ser reiniciada, a pasta
+`figuras/` continua recebendo a codificação anterior, e eu preciso regenerar o
+relatório depois.
+
+**Próximo passo.** Regenerar o relatório ao fim das 100 gerações, conferir de
+novo quantas soluções ficam fora de todas as fronteiras projetadas e decidir com
+o orientador se vale incluir um 3D interativo apenas como material de apoio.
+
+**Arquivos que preservo como evidência.** `src/relatorio_mlp.py` e a cópia
+das figuras da geração 72, reconstruída de `geracoes/072.json`, em `Resultados/revisao_pareto_tres_objetivos/`
+(figuras 01 e 02 em PNG/PDF, com LEIA-ME). Eu salvei essa cópia à parte
+porque a execução em andamento sobrescreve `mlp_conjunto_v1/figuras/`.
+
+**Discussão com os orientadores.** Ainda não discuti esta mudança com eles.
+
+## Entrada 006 — 23/10/2026: o que os gráficos mostram na geração 73 e o problema de peso
+
+**Pergunta que investiguei.** Eu precisei explicar aos orientadores, de forma
+rápida, o que cada gráfico mostra sobre os três objetivos da dissertação e o
+que o desempenho por base revela sobre a detecção do tráfego benigno.
+
+**Decisão que tomei.** Eu congelei a geração 73/100 (PARCIAL, seed 42,
+somente validação) e gerei com o mesmo estado as figuras 01, 02, g1 e g3 e a
+tabela `metricas_solucoes.csv` em `Resultados/mlp_conjunto_v1/orientadores_g073/`.
+Eu reconstruí o estado com as soluções de `geracoes/073.json` e o histórico de
+`progresso.json` até essa geração. Eu escrevi cinco mensagens curtas em
+[explicacoes_rapidas_orientadores.md](explicacoes_rapidas_orientadores.md),
+no formato do WhatsApp.
+
+**Resultado que observei (geração 73).**
+
+- As 22 soluções são não dominadas nos três objetivos. Nas projeções, 16 estão
+  na fronteira erro × atributos, 12 na erro × tempo e 3 na tempo × atributos.
+  S10 e S18 não estão em nenhuma fronteira 2D.
+- O erro cai rápido até cerca de oito atributos (F1-macro de 0,102 com 2
+  atributos para 0,458 com 8) e depois a curva achata: de 17 para 21 atributos,
+  o F1 vai de 0,544 para 0,551. O candidato geométrico a joelho é S11, com 7
+  atributos.
+- Cinco soluções dominam o baseline (37 atributos, F1 0,516, 1,63 µs/evento):
+  S17, S19, S20, S21 e S22. A de maior F1, S22, tem F1 0,551 com 21 atributos
+  (−43%) e 1,32 µs/evento (−19%). A de compromisso, S12, tem 8 atributos (−78%)
+  e 0,84 µs/evento (−48%), com perda de 0,058 de F1.
+- Por base, S22 supera o baseline em UNSW (0,43 vs 0,39) e CIC (0,72 vs 0,65)
+  e fica próxima em ToN (0,56 vs 0,58).
+- O hipervolume está perto de 0,50 desde a geração 40 (0,4979 na 40; 0,4997 na
+  73; máximo de 0,5014 na 65).
+
+**O problema de peso que identifiquei.** No g3, o TPR (ataque classificado como
+algum ataque) fica entre 0,97 e 1,00 em todas as bases e soluções, mas o TNR
+(benigno reconhecido como benigno) é baixo: de 0,04 a 0,46 na validação
+conjunta e de 0,005 a 0,32 em ToN. Na validação conjunta, cerca de metade dos
+alertas é falso alarme: 52% para S22 e 53% para o baseline.
+
+Minha hipótese, ainda não testada, é o peso por classe no treino
+(`pesos_balanceados: true`, `pesos = n / (31 × contagem)` em
+`Modulos/modelo_mlp.py`). O benigno é 63,5% dos 24.500.089 exemplos de
+treino, mas recebe 1/31 (3,2%) do peso total. Cada exemplo benigno pesa 0,051,
+enquanto um exemplo de `worms`, a classe mais rara (130 exemplos), pesa cerca de
+6.079. Errar benigno como ataque custa pouco para a rede. O F1-macro também
+atribui ao benigno 1/31 do objetivo, embora os falsos alarmes reduzam
+indiretamente a precisão das classes de ataque. Como o baseline com 37
+atributos tem o mesmo comportamento, eu atribuo o problema ao protocolo de
+treino e não à seleção de atributos. A proporção de benigno no treino varia por
+base: 96,2% em UNSW, 26,1% em ToN e 88,7% em CIC.
+
+**Alternativas que considerei, sem adotar.** Pesos suavizados (por exemplo,
+raiz quadrada da razão), um peso maior para o benigno, ou a inclusão da taxa
+de falso alarme como objetivo ou restrição. Qualquer uma delas exige um novo
+experimento, com nova pasta, sem misturar com `mlp_conjunto_v1`.
+
+**Limitações que reconheci.** Os resultados são de validação, com uma seed,
+numa geração intermediária. O TPR não exige acertar o tipo do ataque. A
+relação entre os pesos e o TNR baixo é uma hipótese compatível com os dados,
+não uma causa demonstrada. O script dos gráficos complementares
+(`src/graficos_mlp_extras.py`) ainda não estava versionado quando gerei estas
+figuras.
+
+**Próximo passo.** Enviar as mensagens aos orientadores, discutir se testamos
+outro esquema de pesos num novo experimento e repetir esta análise na geração 100.
+
+**Arquivos que preservo como evidência.**
+`Resultados/mlp_conjunto_v1/orientadores_g073/` (figuras 01, 02, g1 e g3 em
+PNG/PDF e `metricas_solucoes.csv`), `geracoes/073.json`,
+`preparacao_resumo.json` (contagens por classe) e
+`docs/explicacoes_rapidas_orientadores.md`.
+
+**Ajuste no g3.** Os painéis da direita não mostravam os valores do eixo Y,
+porque compartilham a escala com os da esquerda, e isso gerou dúvida na
+leitura. Eu passei a escrever o nome da métrica no eixo Y de cada painel, como
+“TPR (0–1, maior é melhor)”, e a repetir os valores nos quatro painéis. Também
+registrei que, no painel de F1-macro, a barra “Conjunto” é o F1-macro geral com
+as 31 classes, o mesmo do objetivo, e não a média das três bases.
+
+**Discussão com os orientadores.** Mensagens preparadas em 23/10/2026; ainda
+sem retorno registrado.
+
+## Entrada 007 — 23/10/2026: o que as curvas de treino revelam sobre as seeds
+
+**Pergunta que investiguei.** Eu quis entender o gráfico de evolução por época
+(g6) e sua relação com a seed única do experimento.
+
+**O que o gráfico mostra.** Para cada solução escolhida e o baseline, o painel
+esquerdo traz o F1-macro de validação após cada época (uma passada pelos
+24.500.089 registros de treino), e o direito, a loss de treino (entropia
+cruzada com pesos de classe). O treino para após 5 épocas sem melhora maior que
+0,0001 no F1 de validação (máximo de 30) e mantém o modelo da melhor época.
+Na geração 73: S22 teve a melhor época na 11 e parou na 16 (cerca de 40 min);
+S12, 11 e 16 (24 min); S1, 12 e 17 (20 min); S4, 6 e 11 (12 min); baseline,
+6 e 11 (33 min).
+
+**Resultado que observei.**
+
+- O F1 de validação oscila de 0,07 a 0,11 entre épocas consecutivas. S22 foi de
+  0,437 na época 10 para 0,551 na 11 e voltou a 0,48 na 16; S4 caiu de 0,233
+  para 0,159 de uma época para a seguinte.
+- O F1 que atribuo a cada solução é o pico escolhido na mesma validação que
+  define o objetivo do NSGA-II; portanto, tende a ser otimista.
+- Na S22, a loss continua caindo após a época 11 enquanto o F1 cai, o que
+  justifica parar pelo F1 e não pela loss.
+- A loss é irregular, com picos nas épocas 7 e 10. Uma hipótese, não testada, é
+  a instabilidade causada pelos pesos de classe extremos (Entrada 006).
+- S1, com 2 atributos, mantém loss perto de 2 e F1 perto de 0,10: não aprende o
+  suficiente.
+
+**Relação com as seeds.** A seed 42 controla quatro coisas no código: a divisão
+dos dados (`Modulos/dados_mlp.py`), os pesos iniciais da MLP e a ordem dos
+dados por época (`Modulos/modelo_mlp.py`) e o NSGA-II (`Modulos/busca_mlp.py`).
+Cada curva é uma única realização. Pela oscilação entre épocas, eu espero que a
+variação entre seeds tenha ordem parecida, maior que a diferença entre S22 e o
+baseline (0,035) e muito maior que a diferença entre S20, S21 e S22 (menos de
+0,01). Com uma seed, eu não afirmo que essas diferenças de F1 sejam reais.
+
+**Proposta que ainda não adotei.** Retreinar as quatro soluções escolhidas e o
+baseline com cinco seeds de modelo, mantendo a divisão dos dados, sem repetir a
+busca: cerca de 20 treinos e 10 horas. Isso exige separar a seed da divisão da
+seed do modelo, num experimento novo. Eu detalhei o desenho em
+[proposta_estudo_seeds.md](proposta_estudo_seeds.md) e acrescentei a mensagem 6
+em [explicacoes_rapidas_orientadores.md](explicacoes_rapidas_orientadores.md).
+
+**Limitações que reconheci.** A estimativa da variação entre seeds é uma
+inferência a partir da oscilação entre épocas, não uma medição. O estudo
+proposto não mede a variação da busca nem da divisão dos dados.
+
+**Arquivos que preservo como evidência.**
+`Resultados/mlp_conjunto_v1/orientadores_g073/g6_curvas_treino.png`,
+`curvas_treino.csv` e `estado_g073.json` na mesma pasta. Eu salvei esse estado
+porque `geracoes/` e `progresso.json` não são versionados; com ele, as figuras
+da geração 73 podem ser refeitas. Fiz o mesmo para a geração 72 em
+`Resultados/revisao_pareto_tres_objetivos/estado_g072.json`.
+
+**Discussão com os orientadores.** Proposta preparada em 23/10/2026; ainda sem
+decisão.
+
 ## Como vou acrescentar minhas próximas entradas
 
 Eu vou registrar mudanças de dataset, métrica, taxonomia, seed, população,
