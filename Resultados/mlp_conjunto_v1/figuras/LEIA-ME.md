@@ -1,6 +1,6 @@
 # Meu relatório da MLP conjunta
 
-PARCIAL | geração 54/100 | seed 42
+PARCIAL | geração 71/100 | seed 42
 
 Eu treino uma MLP com dados das três bases. Eu separo treino, validação e teste por grupos de atributos idênticos.
 Eu seleciono os atributos na validação. Eu uso o teste somente após fixar as escolhas.
