@@ -1,0 +1,32 @@
+classe,suporte,precisao,recall,f1
+benign,256449,0.07563025210084033,0.00010528409157376321,0.00021027546085371836
+exploits,4980,0.35559325060262476,0.7997991967871486,0.4923057907422285
+generic,896,0.13118279569892474,0.06808035714285714,0.0896399706098457
+fuzzers,4267,0.0,0.0,0.0
+backdoor,108,0.0,0.0,0.0
+dos,676,0.002650389526945627,0.04881656804733728,0.005027805286813438
+reconnaissance,508,0.005772699939867709,0.09448818897637795,0.01088065283917035
+shellcode,167,0.10192837465564739,0.2215568862275449,0.13962264150943396
+worms,6,0.0,0.0,0.0
+analysis,123,0.0,0.0,0.0
+ransomware,0,0.0,0.0,0.0
+xss,0,0.0,0.0,0.0
+scanning,0,0.0,0.0,0.0
+password,0,0.0,0.0,0.0
+ddos,0,0.0,0.0,0.0
+injection,0,0.0,0.0,0.0
+mitm,0,0.0,0.0,0.0
+ssh-bruteforce,0,0.0,0.0,0.0
+ddos attacks-loic-http,0,0.0,0.0,0.0
+ddos attack-hoic,0,0.0,0.0,0.0
+dos attacks-slowloris,0,0.0,0.0,0.0
+dos attacks-hulk,0,0.0,0.0,0.0
+ftp-bruteforce,0,0.0,0.0,0.0
+infilteration,0,0.0,0.0,0.0
+bot,0,0.0,0.0,0.0
+dos attacks-goldeneye,0,0.0,0.0,0.0
+brute force -web,0,0.0,0.0,0.0
+dos attacks-slowhttptest,0,0.0,0.0,0.0
+sql injection,0,0.0,0.0,0.0
+ddos attack-loic-udp,0,0.0,0.0,0.0
+brute force -xss,0,0.0,0.0,0.0
