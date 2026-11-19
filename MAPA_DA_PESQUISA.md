@@ -1,6 +1,6 @@
 # Mapa da minha pesquisa
 
-Eu uso este mapa para achar cada experimento, seus resultados e seus textos, na ordem em que fiz a pesquisa. Atualizado em 23/10/2026.
+Eu uso este mapa para achar cada experimento, seus resultados e seus textos, na ordem em que fiz a pesquisa. Atualizado em 19/11/2026.
 
 Os arquivos ainda estão nas pastas originais (fase A da reorganização). Cada experimento tem uma ficha com tudo o que lhe pertence. O nome-padrão indica para onde ele irá na fase B, quando eu mover as pastas para `experimentos/`.
 
@@ -11,7 +11,7 @@ Os arquivos ainda estão nas pastas originais (fase A da reorganização). Cada 
 | E0 | 27/08/2026 | árvore de decisão | transferência | 2 | 2 | pop. 1, 1 geração | teste de execução, descartado | [E1](Resultados/EXPERIMENTO_E1.md#e0--teste-de-execução) |
 | E1 | 07/09/2026 | árvore de decisão | transferência | 2 | 2 | pop. 24, 15 gerações | concluído | [E1](Resultados/EXPERIMENTO_E1.md) |
 | E2 | 07–17/09/2026 | árvore de decisão | transferência | 2 | **3** | pop. 24, 15 gerações | concluído | [E2](Resultados/tres_datasets_v1/EXPERIMENTO_E2.md) |
-| E3 | 21/09/2026 → | **MLP** | **treino conjunto** | **3** | 3 | pop. 24, **100** gerações | em execução (geração 73 em 23/10) | [E3](Resultados/mlp_conjunto_v1/EXPERIMENTO_E3.md) |
+| E3 | 21/09 → 18/11/2026 | **MLP** | **treino conjunto** | **3** | 3 | pop. 24, **100** gerações | concluído; teste reservado avaliado | [E3](Resultados/mlp_conjunto_v1/EXPERIMENTO_E3.md) |
 
 Todos usam seed 42, os mesmos 37 atributos candidatos da família NetFlow v2 e a remoção de portas e TTL por risco de vazamento.
 
@@ -27,7 +27,7 @@ Todos usam seed 42, os mesmos 37 atributos candidatos da família NetFlow v2 e a
 | E1 → E2 | **bases 2 → 3** (2 → 6 direções de transferência) | o efeito de acrescentar uma rede, com o resto igual |
 | E2 → E3 | **classificador, protocolo e objetivos ao mesmo tempo**, além de 15 → 100 gerações e da nova divisão treino/validação/teste | uma mudança de pergunta; a diferença de desempenho não pode ser atribuída a um fator isolado |
 
-Uma leitura possível do fio condutor, ainda a discutir com os orientadores: no E1 e no E2, a transferência entre redes falha (F1 cross de 0,01 a 0,10) e a seleção de atributos melhora pouco; o E3 responde treinando com as três redes juntas e acrescenta o custo de inferência.
+Uma leitura possível do fio condutor, ainda a discutir com os orientadores: no E1 e no E2, a transferência entre redes falha (F1 cross de 0,01 a 0,10) e a seleção de atributos melhora pouco; o E3 responde treinando com as três redes juntas e acrescenta o custo de inferência. Resultado final do E3 (geração 100, teste reservado): S22 com 21 atributos (−43%) e 1,32 µs/evento (−19%) alcança F1-macro de teste 0,533, igual ao baseline de 37 atributos; S10 com 8 atributos fica em 0,463. Uma única seed; o E3 não testa transferência para rede ausente do treino.
 
 ## Experimentos propostos, ainda não executados
 
@@ -46,8 +46,8 @@ Uma leitura possível do fio condutor, ainda a discutir com os orientadores: no 
 | Configuração | [src/config.yaml](src/config.yaml) | [src/config_tres_datasets.yaml](src/config_tres_datasets.yaml) | [src/config_mlp_conjunto.yaml](src/config_mlp_conjunto.yaml) |
 | Protocolo | [README](README.md), seções “Como formulei o experimento concluído com duas bases” e “Como reproduzo a execução com duas bases” | [experimento_tres_datasets.md](docs/experimento_tres_datasets.md) | [experimento_mlp_conjunto.md](docs/experimento_mlp_conjunto.md) |
 | Roteiro para orientadores | [roteiro_completo_orientadores.md](docs/roteiro_completo_orientadores.md), seção 6 | [roteiro_tres_datasets.md](docs/roteiro_tres_datasets.md); roteiro completo, seções 7 e 8 | [roteiro_mlp_conjunto.md](docs/roteiro_mlp_conjunto.md); roteiro completo, seções 10 a 14 |
-| Pareto e métricas | `Resultados/pareto/`, `Resultados/metricas/` | `Resultados/tres_datasets_v1/pareto/`, `metricas/` | `Resultados/mlp_conjunto_v1/` (execução local) |
-| Figuras principais | [figuras/orientadores_final/](Resultados/figuras/orientadores_final/) | [tres_datasets_v1/figuras/](Resultados/tres_datasets_v1/figuras/) | [figuras/](Resultados/mlp_conjunto_v1/figuras/) (vivas) |
+| Pareto e métricas | `Resultados/pareto/`, `Resultados/metricas/` | `Resultados/tres_datasets_v1/pareto/`, `metricas/` | `Resultados/mlp_conjunto_v1/` — `escolhas_antes_do_teste.json`, `teste/`, `figuras/resumo_validacao.csv`; `resultado_final.json` em Git LFS; `modelos/` só local |
+| Figuras principais | [figuras/orientadores_final/](Resultados/figuras/orientadores_final/) | [tres_datasets_v1/figuras/](Resultados/tres_datasets_v1/figuras/) | [figuras/](Resultados/mlp_conjunto_v1/figuras/) (geração 100, com teste) e `figuras_extras/` |
 | Figuras congeladas e revisões | [figuras/orientadores_parcial/](Resultados/figuras/orientadores_parcial/) | [revisao_pareto_anterior/](Resultados/revisao_pareto_anterior/) | [revisao_pareto_tres_objetivos/](Resultados/revisao_pareto_tres_objetivos/) (g72), [orientadores_g073/](Resultados/mlp_conjunto_v1/orientadores_g073/) (g73) |
 | Mensagens rápidas | — | — | [explicacoes_rapidas_orientadores.md](docs/explicacoes_rapidas_orientadores.md) |
 | Diário | Entradas 001–003 | Entradas 001–003 | Entradas 004–007 |

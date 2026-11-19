@@ -18,5 +18,24 @@
   ],
   "joelho_indice": 6,
   "desvio_normalizado": 0.3474894329654943,
-  "conclusao": "HÃ¡ um candidato geomÃ©trico a joelho abaixo da reta entre extremos. NÃ£o Ã© prova de Ã³timo, convergÃªncia ou escolha automÃ¡tica."
+  "conclusao": "Há um candidato geométrico a joelho abaixo da reta entre extremos. Não é prova de ótimo, convergência ou escolha automática.",
+  "projecao": "erro × atributos",
+  "criterio": "maior desvio abaixo da reta entre extremos, só em erro × atributos",
+  "joelho_id": "S7",
+  "projecoes_exploratorias": {
+    "adotado": false,
+    "resultados": {
+      "erro × tempo": {
+        "joelho_id": "S20",
+        "desvio_normalizado": 0.2922855024629356,
+        "conclusao": "Há um candidato geométrico a joelho abaixo da reta entre extremos. Não é prova de ótimo, convergência ou escolha automática."
+      },
+      "tempo × atributos": {
+        "joelho_id": null,
+        "desvio_normalizado": 0.0,
+        "conclusao": "Menos de três pontos na fronteira 2D; não avalio curvatura."
+      }
+    },
+    "nota": "Mesma regra geométrica aplicada às outras projeções apenas para registro. Não aparece nas figuras nem fundamenta conclusão; o candidato oficial vale só para erro × atributos."
+  }
 }

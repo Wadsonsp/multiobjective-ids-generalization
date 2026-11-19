@@ -19,8 +19,21 @@ Eu não uso gráfico 3D estático: a perspectiva impede ler valores, e uma super
 Para ver os três objetivos lado a lado sem projeção, eu uso as coordenadas paralelas (g1) em figuras_extras.
 Eu ligo apenas os pontos não dominados da projeção; os segmentos não são resultados intermediários medidos.
 Eu não imponho formato de barriga nem suavizo os pontos.
+S1–S22 identificam as máscaras não dominadas da geração mostrada, numeradas por quantidade de atributos; os números mudam se a geração mudar.
+As escolhas fixadas na validação e avaliadas no teste reservado aparecem com borda grossa e rótulo em negrito
+nos três painéis, para ligar as figuras de Pareto à figura 04.
 
+## Onde eu calculo o joelho
+
+Eu aplico a verificação geométrica somente à figura 01 (erro × atributos): tomo a fronteira dessa projeção,
+traço a reta entre seus extremos e marco o ponto de maior desvio normalizado em direção à origem.
 Minha verificação geométrica: Há um candidato geométrico a joelho abaixo da reta entre extremos. Não é prova de ótimo, convergência ou escolha automática.
+Candidato: S7 (critério: maior desvio abaixo da reta entre extremos, só em erro × atributos).
+O critério ignora o tempo; o candidato pode ser lento, e por isso escrevo seu tempo ao lado do anel vermelho.
+Na figura 02 eu não calculo joelho. S7 aparece ali com um anel cinza tracejado
+só para lembrar que é candidato na figura 01; seu marcador (círculo ou losango) segue a regra de cada projeção.
+Aplicar a mesma regra às outras projeções é exploratório: eu registro o resultado em diagnostico_pareto.json
+com `adotado: false` e não o uso nas figuras nem como conclusão.
 
 Eu calculo o HV nos três objetivos, com tempo transformado por t/(t+t_ref), referência fixa (1.1, 1.1, 1.1)
 e t_ref=1.63122935e-06 s/evento, medido no baseline. Na otimização eu uso o tempo original.
