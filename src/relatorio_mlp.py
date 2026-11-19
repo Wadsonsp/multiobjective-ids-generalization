@@ -164,7 +164,7 @@ def gerar(estado, saida, meta):
             fig, ax = plt.subplots(figsize=(10, 5))
             ax.bar(xx-.2, [s['validacao']['validacao']['geral']['f1_macro'] for s in avaliacoes], .4, label='Validação usada na seleção')
             ax.bar(xx+.2, [s['medidas']['geral']['f1_macro'] for s in avaliacoes], .4, label='Teste reservado')
-            ax.set(xticks=xx, xticklabels=labels, ylim=(0, 1), ylabel='F1-macro', title='Avaliação final das escolhas fixadas antes do teste')
+            ax.set(xticks=xx, xticklabels=labels, ylim=(0, 1), ylabel='F1-macro', title='F1-macro na validação e no teste reservado')
             ax.legend(); salvar(fig, '04_validacao_teste')
             for sol in avaliacoes:
                 medidas = [('geral', sol['medidas']['geral'])] + list(sol['medidas']['por_base'].items())
